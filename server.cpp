@@ -11,6 +11,7 @@ Server::Server()
 
 Server::Server(int PORT)
 {
+    if(PORT < 1) throw runtime_error("PORT must be greater than zero.");
     server_port = PORT;
     max_connection = 128;
     initServer();
@@ -80,8 +81,6 @@ void Server::listenerRoutes(int client_id)
         int bytes_received = recv(client_id, buffer, sizeof(buffer), 0);
         if (bytes_received <= 0) break;
 
-        printc(YELLOW,"%s\n",buffer);
-
         pack["cid"] = int(client_id);
 
         int index = serialize_route(buffer, &route);
@@ -116,7 +115,7 @@ void Server::addRoute(string route, function<void(map<string, any>)> funcRoute)
 void Server::route(string route, map<string, any>& args, int client_id)
 {
     string buffer = route + "@" + serialize_map(args);
-    printc(GREEN,"%s\n",buffer.c_str());
+    printc(GREEN,"SERVER_SEND: %s\n",buffer.c_str());
     send(client_id, buffer.c_str(), buffer.size(), 0);
 
 }
@@ -125,10 +124,20 @@ void Server::setClientId(map<string, any> & args)
 {
     int client_id = any_cast<int>(args["cid"]);
 
+    string tempId;
     map<string, any> response;
-    response["cid"] = generateClientId();
-    route("/setId", response,client_id);
 
+    
+    tempId = generateClientId();
+    
+    while (clients.count(tempId) > 0)
+    {
+        tempId = generateClientId();
+    }
+    
+    clients[tempId] = client_id;
+    response["cid"] = tempId;
+    route("/setId", response,client_id);
 
 }
 

@@ -34,13 +34,14 @@ class Client
         void initClient();
         void connectClient();
         void coreRoutes();
-        void setClientId(map<string,any> args);
+        void setClientId(map<string,any>& args);
         
         void listenerRoutes();
 
 
     public:
         Client();
+        Client(int PORT);
         ~Client();
 
         void run();

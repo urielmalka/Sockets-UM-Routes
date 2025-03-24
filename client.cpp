@@ -6,7 +6,17 @@ Client::Client()
     initClient();
 }
 
-Client::~Client(){}
+Client::Client(int PORT)
+{
+    if(PORT < 1) throw runtime_error("PORT must be greater than zero.");
+    server_port = PORT;
+    initClient();
+}
+
+Client::~Client()
+{
+    close(serverSocket);
+}
 
 void Client::initClient()
 {
@@ -16,7 +26,10 @@ void Client::initClient()
     serverAddress.sin_addr.s_addr = INADDR_ANY;
 
     connectClient();
-
+    coreRoutes();
+    
+    map<string, any> emptyArgs;
+    route("/setId",emptyArgs);
 }
 
 void Client::connectClient()
@@ -34,11 +47,6 @@ void Client::connectClient()
         this_thread::sleep_for(chrono::seconds(5));
 
     }
-
-
-    coreRoutes();
-
-    
     
 }
 
@@ -67,9 +75,7 @@ void Client::listenerRoutes()
 
         try{
             auto func = routes.at(route);
-            printci(BLUE,"Run func\n");
             func(pack);
-            printci(BLUE,"End func\n");
         }catch(const out_of_range &e){
             printc(RED,"Error: ");
             cout << route << " not found." << endl;
@@ -78,7 +84,7 @@ void Client::listenerRoutes()
 
     }
 
-    printcb(RED, "Client %s is disconnect now.\n",client_id.c_str());
+    printcb(RED, "Client %s is disconnect now\n",client_id.c_str());
     
     close(serverSocket);
     
@@ -92,7 +98,7 @@ void Client::addRoute(string route, function<void(map<string, any>)> funcRoute)
 void Client::route(string route, map<string, any>& args)
 {
     string buffer = route + "@" + serialize_map(args);
-    printc(GREEN,"%s\n",buffer.c_str());
+    printc(GREEN,"CLIENT_SEND: %s\n",buffer.c_str());
     send(serverSocket, buffer.c_str(), buffer.size(), 0);
 
 }
@@ -102,7 +108,7 @@ void Client::run(){
 }
 
 
-void Client::setClientId(map<string, any> args)
+void Client::setClientId(map<string, any>& args)
 {
     client_id = any_cast<string>(args["cid"]);
     printcb(GREEN, "Client %s is connect now.\n",client_id.c_str());
@@ -111,9 +117,4 @@ void Client::setClientId(map<string, any> args)
 void Client::coreRoutes()
 {   
     addRoute("/setId", [this](map<string, any> args) {setClientId(args); } );
-
-    map<string, any> emptyArgs;
-    route("/setId",emptyArgs);
-
-    printcb(BLUE,"Send /setId\n");
 }
