@@ -1,28 +1,17 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <thread>
-#include <chrono>
-#include <color.h>
-#include <map>
-#include <any>
-#include <string.h>
-#include <functional>
-#include <iostream>
 
+#include "networkEntity.hpp"
 #include "serialize.hpp"
 
 #define BUFFER_SIZE 1024  
 
 using namespace std;
 
-class Client
+class Client : public NetworkEntity
 {
     private:
-
         string client_id;
 
         int serverSocket;
@@ -37,12 +26,16 @@ class Client
         void setClientId(map<string,any>& args);
         
         void listenerRoutes();
+        
+        void cryptoHandler(function<string(string)> encryptionFunction,function<string(string)> decryptionFunction);
 
 
     public:
         Client();
         Client(int PORT);
         ~Client();
+
+        string getClientID(){ return client_id; }
 
         void run();
         void addRoute(string route, function<void(map<string, any>)> funcRoute);

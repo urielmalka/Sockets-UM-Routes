@@ -16,7 +16,7 @@ Example:
 
             The Route is /sendDetails
             The Map is {
-                            "name":"Uriel", "phone":"972512345678", "pet":"Dog"
+                            "name":"Uriel", "phone":"972512345678", "hobby":"Dive"
                         }
 
 */
@@ -28,6 +28,7 @@ Example:
 #include <map>
 #include <any>
 #include <typeinfo>
+#include <vector>
 
 using namespace std;
 
@@ -39,10 +40,13 @@ using namespace std;
 const string CELL_MIDDLE_VALUE = "/:";
 const string CELL_LAST_VALUE = "/#";
 const char AT_SIGN_ROUTE = '@';
+const char TILTA = '~';
 
 string serialize_cast(const any a);
 string serialize_map(const map<string,any>& args);
 int serialize_route(const string s, string *rout);
-int serialize_str(const string s, map<string,any> *args);
+int serialize_str(const string& s, map<string,any> *args);
+vector<string> splitByDelimiter(const string& str, const string& delimiter);
+
 
 #endif

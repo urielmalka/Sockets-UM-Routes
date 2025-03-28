@@ -26,7 +26,14 @@ Server::Server(int PORT, int max_conn)
     initServer();
 }
 
-Server::~Server(){}
+Server::~Server()
+{
+    for(auto &t : tasks)
+    {
+        t.join();
+    }
+    close(serverSocket);
+}
 
 void Server::initServer()
 {
@@ -36,11 +43,20 @@ void Server::initServer()
     serverAddress.sin_port = htons(server_port);
     serverAddress.sin_addr.s_addr = INADDR_ANY;
 
-    // binding socket.
-    bind(serverSocket, (struct sockaddr*)&serverAddress,sizeof(serverAddress));
+    if( bind(serverSocket, (struct sockaddr*)&serverAddress,sizeof(serverAddress)) < 0)
+    {
+        perror("Bind failed");
+        close(serverSocket);
+        exit(EXIT_FAILURE);
+    }
 
     // listening to the assigned socket
-    listen(serverSocket, max_connection);
+    if(listen(serverSocket, max_connection) < 0)
+    {
+        perror("Listen failed");
+        close(serverSocket);
+        exit(EXIT_FAILURE);  
+    }
 }
 
 void Server::run()
@@ -58,10 +74,26 @@ void Server::run()
             continue;
         }
 
+        string tempId;
+        tempId = generateClientId();
+        
+        while (clients.count(tempId) > 0)
+        {
+            tempId = generateClientId();
+        }
+        
+        clients[tempId] = new_socket;
+
+        map<string, any> response;
+
+        response["cid"] = tempId;
+        route("/setId", response,new_socket);
+
         thread thread_client([this, new_socket](){
             listenerRoutes(new_socket);
         });
         thread_client.detach();
+        
 
     }
 }
@@ -80,71 +112,151 @@ void Server::listenerRoutes(int client_id)
 
         int bytes_received = recv(client_id, buffer, sizeof(buffer), 0);
         if (bytes_received <= 0) break;
+        //printc(YELLOW,"SERVER GET: %s\n", buffer);
 
-        pack["cid"] = int(client_id);
+        string t = "~";
+        vector<string> result = splitByDelimiter(buffer, t);
 
-        int index = serialize_route(buffer, &route);
-        if(index != ERROR_ROUTE);
+        for (const string& s : result) {
+            
+            char* c = new char[s.size() + 1];
 
-        memmove(buffer, buffer + index, BUFFER_SIZE);
+            strcpy(c, s.c_str());
 
-        if(serialize_str(buffer, &pack) != SUCCESS_SERIALIZE_PACK) return;
+            int index = serialize_route(c, &route);
+            if(index == ERROR_ROUTE){
+                printcu(RED,"Error route socket: %s\n",s.c_str());
+                continue;
+            };
 
-        try{
-            auto func = routes.at(route);
-            func(pack);
-        }catch(const out_of_range &e){
-            printc(RED,"Error: ");
-            cout << route << " not found." << endl;
+            memmove(c, c + index, s.size() + 1);
+            if(serialize_str(c, &pack) == ERROR_SERIALIZE_PACK){
+                printcu(RED,"Error pack socket: %s\n",s.c_str());
+                continue;
+            };
+
+            pack["cid"] = getClientBySocketID(client_id);
+            logGet(pack);
+            try{
+                auto func = routes.at(route);
+                func(pack);
+            }catch(const out_of_range &e){
+                printc(RED,"Error: %s not found\n",route.c_str());
+            }
+
+            delete[] c;
+            pack.clear();
         }
+
+        
         
 
     }
-
-    printcb(RED, "Client %d is disconnect now.\n", client_id);
-    
+    string cid = getClientBySocketID(client_id);
+    printcb(RED, "Client %s is disconnect now.\n", cid.c_str());
+    clients.erase(cid);
     close(client_id);
     
 }
 
-void Server::addRoute(string route, function<void(map<string, any>)> funcRoute)
+void Server::addRoute(string route, function<void(map<string, any>&)> funcRoute)
 {
     routes[route] = funcRoute;
 }
 
+void Server::addRoute(string route, function<void(Server, map<string, any>& )> funcRoute)
+{
+    serverRoutes[route] = funcRoute;
+}
+
 void Server::route(string route, map<string, any>& args, int client_id)
 {
-    string buffer = route + "@" + serialize_map(args);
-    printc(GREEN,"SERVER_SEND: %s\n",buffer.c_str());
+    string buffer = route + AT_SIGN_ROUTE + serialize_map(args);
+
+
+    logSend(args);
+
     send(client_id, buffer.c_str(), buffer.size(), 0);
 
 }
 
-void Server::setClientId(map<string, any> & args)
+
+void Server::sendMessageToClient(string route ,string cid ,map<string, any> &args) 
 {
-    int client_id = any_cast<int>(args["cid"]);
-
-    string tempId;
-    map<string, any> response;
-
-    
-    tempId = generateClientId();
-    
-    while (clients.count(tempId) > 0)
-    {
-        tempId = generateClientId();
+    string buffer = route + AT_SIGN_ROUTE + serialize_map(args);
+    int client_id = clients[cid];
+    send(client_id, buffer.c_str(), buffer.size(), 0);
+};
+void Server::sendMessageToClientList(string route ,list<string> cids, map<string, any> &args) 
+{
+    string buffer = route + AT_SIGN_ROUTE + serialize_map(args);
+    int client_id;
+    for(string &cid : cids){
+        client_id = clients[cid];
+        send(client_id, buffer.c_str(), buffer.size(), 0);
     }
+};
+void Server::sendMessageToAll(string route ,map<string, any> &args) 
+{
+    logSend(args);
     
-    clients[tempId] = client_id;
-    response["cid"] = tempId;
-    route("/setId", response,client_id);
+    string buffer = route + AT_SIGN_ROUTE + serialize_map(args);
+    
+    for(auto &client : clients)
+    {
+        send(client.second, buffer.c_str(), buffer.size(), 0); 
+    }
+};
+void Server::closeClientConnection(string cid) 
+{
+    int client_id = clients[cid];
+    close(client_id);
+};
 
-}
 
 void Server::coreRoutes()
 {   
-    addRoute("/setId", [this](map<string, any> args) {setClientId(args); } );
+    //addRoute("/setId", [this](map<string, any> args) {setClientId(args); } );
+
 }
+
+string Server::getClientBySocketID(int sid)
+{
+    for (auto it = clients.begin(); it != clients.end(); ++it)
+    {
+        if(it->second == sid) return it->first;
+    }
+
+    return CLIENT_NOT_FOUND;
+}
+
+
+void Server::logGet(map<string, any> &args)
+{
+    if(!logActivied) return;
+
+    printcu(YELLOW, "SERVER GET:");
+    printc(YELLOW, "\n\t{\n\t\t");
+    for(auto &pair : args)
+    {
+        printc(YELLOW, "\"%s\": \"%s\" \n\t\t",pair.first.c_str(), any_cast<string>(pair.second).c_str());
+    }
+    printc(YELLOW, "\b\b\b\b\b\b\b\b}\n");
+}
+
+void Server::logSend(map<string, any> &args)
+{
+    if(!logActivied) return;
+
+    printcu(GREEN, "SERVER SEND:");
+    printc(GREEN, "\n\t{\n\t\t");
+    for(auto &pair : args)
+    {
+        printc(GREEN, "\"%s\": \"%s\" \n\t\t",pair.first.c_str(), any_cast<string>(pair.second).c_str());
+    }
+    printc(GREEN, "\b\b\b\b\b\b\b\b}\n");
+}
+
 
 /* This function generate id for the Class Client */
 string generateClientId()
@@ -153,3 +265,4 @@ string generateClientId()
     for (int i = 0; i < 8; ++i) {cid += chars[rand() % chars.length()];}
     return cid;
 }
+

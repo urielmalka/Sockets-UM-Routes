@@ -19,9 +19,14 @@ string serialize_cast(any a) {
 
 string serialize_map(const map<string,any>& args)
 {
-    if (args.empty()) return "";
-
+   
     ostringstream buffer;
+
+    if (args.empty()){
+        buffer << TILTA;
+        return buffer.str();
+    };
+
 
     for(const auto& pair : args)
     { 
@@ -32,29 +37,32 @@ string serialize_map(const map<string,any>& args)
         "/#"; 
     }
 
-    return buffer.str();
+    return buffer.str() + TILTA;
 }
 
 
-int serialize_str(const string s, map<string,any> * args)
+int serialize_str(const string& s, map<string,any> * args)
 {
-
-    string first,second;
+    string tempS,first,second;
 
     size_t pos = 0;
-    
 
-    while (pos < s.size())
+    tempS = s;
+    
+    size_t index = s.find(TILTA);
+    if(index != -1) tempS = s.substr(0,index);
+
+    while (pos < tempS.size())
     {
-        size_t end = s.find(CELL_MIDDLE_VALUE, pos);
+        size_t end = tempS.find(CELL_MIDDLE_VALUE, pos);
         if(end == -1) return ERROR_SERIALIZE_PACK;
-        first = s.substr(pos, end - pos);
+        first = tempS.substr(pos, end - pos);
         pos = end + CELL_MIDDLE_VALUE.length();
     
-        end = s.find(CELL_LAST_VALUE, pos);
+        end = tempS.find(CELL_LAST_VALUE, pos);
         if(end == -1) return ERROR_SERIALIZE_PACK;
 
-        second = s.substr(pos, end - pos);
+        second = tempS.substr(pos, end - pos);
         pos = end + CELL_LAST_VALUE.length();
 
         (*args)[first] = static_cast<any>(second);
@@ -65,6 +73,7 @@ int serialize_str(const string s, map<string,any> * args)
 
 int serialize_route(const string s, string *rout)
 {
+
     size_t index = s.find(AT_SIGN_ROUTE);
 
     if(index == -1) return ERROR_ROUTE;
@@ -72,4 +81,23 @@ int serialize_route(const string s, string *rout)
     *rout = s.substr(0,index);
 
     return index + 1; // + 1 for '@' 
+}
+
+
+vector<string> splitByDelimiter(const string& str, const string& delimiter) {
+    vector<string> result;
+    size_t start = 0;
+    size_t end = str.find(delimiter);
+
+    while (end != string::npos) {
+        if(str.substr(start, end - start).size() > 0)
+            result.push_back(str.substr(start, end - start));
+        start = end + delimiter.length();
+        end = str.find(delimiter, start);
+    }
+
+    if(str.substr(start).size() > 0)
+        result.push_back(str.substr(start));
+
+    return result;
 }

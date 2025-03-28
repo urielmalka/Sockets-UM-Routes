@@ -28,8 +28,6 @@ void Client::initClient()
     connectClient();
     coreRoutes();
     
-    map<string, any> emptyArgs;
-    route("/setId",emptyArgs);
 }
 
 void Client::connectClient()
@@ -63,7 +61,7 @@ void Client::listenerRoutes()
         int bytes_received = recv(serverSocket, buffer, sizeof(buffer), 0);
         if (bytes_received <= 0) break;
 
-        printc(YELLOW,"%s\n",buffer);
+        /*printc(YELLOW,"FROM SERVER: %s\n",buffer);
 
         int index = serialize_route(buffer, &route);
         
@@ -81,7 +79,41 @@ void Client::listenerRoutes()
             cout << route << " not found." << endl;
         }
         
+        memmove(buffer, buffer - index, BUFFER_SIZE);
+        pack.clear();
+        */
+        string t = "~";
+        vector<string> result = splitByDelimiter(buffer, t);
 
+        for (const string& s : result) {
+            
+            char* c = new char[s.size() + 1];
+
+            strcpy(c, s.c_str());
+            //printci(MAGENTA, "%s\n",c);
+
+            int index = serialize_route(c, &route);
+            if(index == ERROR_ROUTE){
+                printcu(RED,"Error route socket: %s\n",s.c_str());
+                continue;
+            };
+
+            memmove(c, c + index, s.size() + 1);
+            if(serialize_str(c, &pack) == ERROR_SERIALIZE_PACK){
+                printcu(RED,"Error pack socket: %s\n",s.c_str());
+                continue;
+            };
+  
+            try{
+                auto func = routes.at(route);
+                func(pack);
+            }catch(const out_of_range &e){
+                printc(RED,"Error: %s not found\n",route.c_str());
+            }
+
+            delete[] c;
+            pack.clear();
+        }
     }
 
     printcb(RED, "Client %s is disconnect now\n",client_id.c_str());
@@ -100,7 +132,6 @@ void Client::route(string route, map<string, any>& args)
     string buffer = route + "@" + serialize_map(args);
     printc(GREEN,"CLIENT_SEND: %s\n",buffer.c_str());
     send(serverSocket, buffer.c_str(), buffer.size(), 0);
-
 }
 
 void Client::run(){
