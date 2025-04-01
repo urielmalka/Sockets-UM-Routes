@@ -19,6 +19,14 @@
 
 class NetworkEntity{
 
+    private:
+
+    protected:
+
+    public:
+        NetworkEntity();
+        ~NetworkEntity();
+
 };
 
 #endif
