@@ -1,4 +1,65 @@
-#include "server.hpp"
+#ifndef SERVER_HPP
+#define SERVER_HPP
+
+#include "Sockum/networkEntity.hpp"
+#include "Sockum/utils/serialize.hpp"
+
+using namespace std;
+
+#define BUFFER_SIZE 1024  
+
+const string chars = "abcdefghijklmnopqrstuvwxyz";
+const string CLIENT_NOT_FOUND = "non-cid";
+string generateClientId();
+
+class Server : public NetworkEntity
+{
+    private:
+        
+        void initServer();
+
+        int max_connection;
+
+        bool logActivied = true;
+
+        map<string, function<void(map<string, any>&)> > routes;
+        map<string, function<void(Server, map<string, any>&)> > serverRoutes;
+        map<string, int> clients;
+
+        vector<thread> tasks;
+
+        void listenerRoutes(int client_id);
+
+        /* Core Functions Routes */
+        void coreRoutes();
+        /*End of Core Functions Routes */
+
+        string getClientBySocketID(int sid);
+
+        void logGet(map<string, any> &args);
+        void logSend(map<string, any> &args);
+
+    public:
+        Server();
+        Server(int PORT);
+        Server(int PORT, int max_conn);
+        ~Server();
+
+
+
+         Server* sendMessageToClient(string route ,string cid ,map<string, any> &args);
+         Server* sendMessageToClientList(string route ,list<string> cids, map<string, any> &args);
+         Server* sendMessageToAll(string route ,map<string, any> &args);
+         Server* closeClientConnection(string cid);
+         
+
+        void run();
+        Server* addRoute(string route, function<void(map<string, any>&)> funcRoute);
+        Server* addRoute(string route, function<void(Server, map<string, any>&)> funcRoute);
+        Server* route(string route, map<string, any>& args, int client_id);
+    
+};
+
 
 
 Server::Server()
@@ -159,17 +220,19 @@ void Server::listenerRoutes(int client_id)
     
 }
 
-void Server::addRoute(string route, function<void(map<string, any>&)> funcRoute)
+Server* Server::addRoute(string route, function<void(map<string, any>&)> funcRoute)
 {
     routes[route] = funcRoute;
+    return this;
 }
 
-void Server::addRoute(string route, function<void(Server, map<string, any>& )> funcRoute)
+Server* Server::addRoute(string route, function<void(Server, map<string, any>& )> funcRoute)
 {
     serverRoutes[route] = funcRoute;
+    return this;
 }
 
-void Server::route(string route, map<string, any>& args, int client_id)
+Server* Server::route(string route, map<string, any>& args, int client_id)
 {
     string buffer = route + AT_SIGN_ROUTE + serialize_map(args);
 
@@ -177,17 +240,20 @@ void Server::route(string route, map<string, any>& args, int client_id)
     logSend(args);
 
     send(client_id, buffer.c_str(), buffer.size(), 0);
-
+    
+    return this;
 }
 
 
-void Server::sendMessageToClient(string route ,string cid ,map<string, any> &args) 
+Server* Server::sendMessageToClient(string route ,string cid ,map<string, any> &args) 
 {
     string buffer = route + AT_SIGN_ROUTE + serialize_map(args);
     int client_id = clients[cid];
     send(client_id, buffer.c_str(), buffer.size(), 0);
+
+    return this;
 };
-void Server::sendMessageToClientList(string route ,list<string> cids, map<string, any> &args) 
+Server* Server::sendMessageToClientList(string route ,list<string> cids, map<string, any> &args) 
 {
     string buffer = route + AT_SIGN_ROUTE + serialize_map(args);
     int client_id;
@@ -195,8 +261,10 @@ void Server::sendMessageToClientList(string route ,list<string> cids, map<string
         client_id = clients[cid];
         send(client_id, buffer.c_str(), buffer.size(), 0);
     }
+
+    return this;
 };
-void Server::sendMessageToAll(string route ,map<string, any> &args) 
+Server* Server::sendMessageToAll(string route ,map<string, any> &args) 
 {
     logSend(args);
     
@@ -206,11 +274,15 @@ void Server::sendMessageToAll(string route ,map<string, any> &args)
     {
         send(client.second, buffer.c_str(), buffer.size(), 0); 
     }
+
+    return this;
 };
-void Server::closeClientConnection(string cid) 
+Server* Server::closeClientConnection(string cid) 
 {
     int client_id = clients[cid];
     close(client_id);
+
+    return this;
 };
 
 
@@ -266,3 +338,9 @@ string generateClientId()
     return cid;
 }
 
+
+
+
+
+
+#endif

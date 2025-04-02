@@ -17,16 +17,26 @@
 #include <ctime>
 #include <list>
 
+using namespace std;
+
 class NetworkEntity{
 
     private:
 
     protected:
+        int serverSocket;
+        int server_port;
 
     public:
+        
         NetworkEntity();
         ~NetworkEntity();
 
 };
+
+NetworkEntity::NetworkEntity(){};
+
+NetworkEntity::~NetworkEntity(){};
+
 
 #endif
