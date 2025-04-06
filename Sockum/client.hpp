@@ -35,6 +35,8 @@ class Client : public NetworkEntity
         void run();
         Client* addRoute(string route, function<void(map<string, any>)> funcRoute);
         Client* route(string route, map<string, any>& args);
+
+        void disconnect() { close(serverSocket); };
 };
 
 
@@ -75,6 +77,7 @@ void Client::connectClient()
     {
         is_connected = connect(serverSocket, (struct sockaddr*)&serverAddress,sizeof(serverAddress));
         if(is_connected == 0 ) {
+            mangePack->add_cid("local");
             printc(GREEN,"Client connect to port %d.\n",server_port);
             break;
         };
@@ -99,21 +102,26 @@ void Client::listenerRoutes()
         int bytes_received = recv(serverSocket, buffer, sizeof(buffer), 0);
         if (bytes_received <= 0) break;
 
-        
+    
         /*if(isCryptp){
             string de_buffer = decrypt(buffer);
             strncpy(buffer,de_buffer.c_str(),BUFFER_SIZE - 1);
         }*/
 
+        string strBuffer(buffer,bytes_received);
+
+        if(!mangePack->manegePack("local",strBuffer)) continue;
+
+        string packBuffer = mangePack->getPack("local");
+
         string t = "~";
-        vector<string> result = splitByDelimiter(buffer, t);
+        vector<string> result = splitByDelimiter(packBuffer, t);
 
         for (const string& s : result) {
             
             char* c = new char[s.size() + 1];
 
             strcpy(c, s.c_str());
-            //printci(MAGENTA, "%s\n",c);
 
             int index = serialize_route(c, &route);
             if(index == ERROR_ROUTE){
@@ -154,8 +162,13 @@ Client* Client::addRoute(string route, function<void(map<string, any>)> funcRout
 Client* Client::route(string route, map<string, any>& args)
 {
     string buffer = route + "@" + serialize_map(args);
-    printc(GREEN,"CLIENT_SEND: %s\n",buffer.c_str());
-    send(serverSocket, buffer.c_str(), buffer.size(), 0);
+    vector<string> packs = mangePack->chunk_string_for_network(buffer);
+
+    for(const string &p : packs){
+        send(serverSocket, p.c_str(), p.size(), 0);
+    }
+
+
 
     return this;
 }

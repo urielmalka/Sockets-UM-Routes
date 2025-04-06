@@ -175,10 +175,15 @@ void Server::listenerRoutes(int client_id)
 
         int bytes_received = recv(client_id, buffer, sizeof(buffer), 0);
         if (bytes_received <= 0) break;
-        printc(YELLOW,"SERVER GET: %s\n", buffer);
 
+        string strBuffer(buffer,bytes_received);
+
+        if(!mangePack->manegePack(getClientBySocketID(client_id),strBuffer)) continue;
+
+        string packBuffer = mangePack->getPack(getClientBySocketID(client_id));
+        
         string t = "~";
-        vector<string> result = splitByDelimiter(buffer, t);
+        vector<string> result = splitByDelimiter(packBuffer.c_str(), t);
 
         for (const string& s : result) {
             
@@ -217,9 +222,9 @@ void Server::listenerRoutes(int client_id)
     }
     string cid = getClientBySocketID(client_id);
     printcb(RED, "Client %s is disconnect now.\n", cid.c_str());
-    clients.erase(cid);
-    mangePack->remove_cid(cid);
-    close(client_id);
+    //clients.erase(cid);
+    //mangePack->remove_cid(cid);
+    //close(client_id);
     
 }
 
@@ -242,7 +247,10 @@ Server* Server::route(string route, map<string, any>& args, int client_id)
 
     logSend(args);
 
-    send(client_id, buffer.c_str(), buffer.size(), 0);
+    vector<string> packs = mangePack->chunk_string_for_network(buffer);
+    for(const string &p : packs){
+        send(client_id, p.c_str(), p.size(), MSG_NOSIGNAL);
+    }
     
     return this;
 }
@@ -252,30 +260,44 @@ Server* Server::sendMessageToClient(string route ,string cid ,map<string, any> &
 {
     string buffer = route + AT_SIGN_ROUTE + serialize_map(args);
     int client_id = clients[cid];
-    send(client_id, buffer.c_str(), buffer.size(), 0);
+
+    vector<string> packs = mangePack->chunk_string_for_network(buffer);
+
+    for(const string &p : packs){
+        send(client_id, p.c_str(), p.size(), 0);
+    }
 
     return this;
 };
 Server* Server::sendMessageToClientList(string route ,list<string> cids, map<string, any> &args) 
 {
     string buffer = route + AT_SIGN_ROUTE + serialize_map(args);
+    vector<string> packs = mangePack->chunk_string_for_network(buffer);
     int client_id;
-    for(string &cid : cids){
-        client_id = clients[cid];
-        send(client_id, buffer.c_str(), buffer.size(), 0);
+
+    for(const string &p : packs){
+        for(string &cid : cids){
+            client_id = clients[cid];
+            send(client_id, p.c_str(), p.size(), 0);
+        }
     }
 
     return this;
 };
+
 Server* Server::sendMessageToAll(string route ,map<string, any> &args) 
 {
     logSend(args);
     
     string buffer = route + AT_SIGN_ROUTE + serialize_map(args);
-    
-    for(auto &client : clients)
-    {
-        send(client.second, buffer.c_str(), buffer.size(), 0); 
+    vector<string> packs = mangePack->chunk_string_for_network(buffer);
+
+    for(auto &client : clients){
+        for(const string &p : packs){
+            ssize_t bytes_sent = send(client.second, p.c_str(), p.size(), MSG_NOSIGNAL);
+            if(bytes_sent < 0)
+                printc(RED, "Send Faild\n");
+        }
     }
 
     return this;
