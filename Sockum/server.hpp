@@ -173,7 +173,7 @@ void Server::listenerRoutes(int client_id)
 
         int bytes_received = recv(client_id, buffer, sizeof(buffer), 0);
         if (bytes_received <= 0) break;
-        //printc(YELLOW,"SERVER GET: %s\n", buffer);
+        printc(YELLOW,"SERVER GET: %s\n", buffer);
 
         string t = "~";
         vector<string> result = splitByDelimiter(buffer, t);

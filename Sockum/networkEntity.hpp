@@ -26,11 +26,20 @@ class NetworkEntity{
     protected:
         int serverSocket;
         int server_port;
+        bool isCryptp = false;
+
+        function<string( const string&)> decrypt;
+        function<string( const string&)> encrypt;
+
+        void setDecrypt(function<string( const string&)> d) { decrypt = d; };
+        void setEncrypt(function<string( const string&)> e) { encrypt = e; };
 
     public:
         
         NetworkEntity();
         ~NetworkEntity();
+
+        void setCrypto(function<string( const string&)> d, function<string( const string&)> e);
 
 };
 
@@ -38,5 +47,11 @@ NetworkEntity::NetworkEntity(){};
 
 NetworkEntity::~NetworkEntity(){};
 
+void NetworkEntity::setCrypto(function<string( const string&)> decrypt, function<string( const string&)> encrypt)
+{
+    setDecrypt(decrypt);
+    setEncrypt(encrypt);
+    isCryptp = true;
+}
 
 #endif

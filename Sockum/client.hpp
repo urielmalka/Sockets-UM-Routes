@@ -24,9 +24,6 @@ class Client : public NetworkEntity
         void setClientId(map<string,any>& args);
         
         void listenerRoutes();
-        
-        void cryptoHandler(function<string(string)> encryptionFunction,function<string(string)> decryptionFunction);
-
 
     public:
         Client();
@@ -102,27 +99,12 @@ void Client::listenerRoutes()
         int bytes_received = recv(serverSocket, buffer, sizeof(buffer), 0);
         if (bytes_received <= 0) break;
 
-        /*printc(YELLOW,"FROM SERVER: %s\n",buffer);
-
-        int index = serialize_route(buffer, &route);
         
-        if(index != ERROR_ROUTE);
+        /*if(isCryptp){
+            string de_buffer = decrypt(buffer);
+            strncpy(buffer,de_buffer.c_str(),BUFFER_SIZE - 1);
+        }*/
 
-        memmove(buffer, buffer + index, BUFFER_SIZE);
-
-        if(serialize_str(buffer, &pack) != SUCCESS_SERIALIZE_PACK) return;
-
-        try{
-            auto func = routes.at(route);
-            func(pack);
-        }catch(const out_of_range &e){
-            printc(RED,"Error: ");
-            cout << route << " not found." << endl;
-        }
-        
-        memmove(buffer, buffer - index, BUFFER_SIZE);
-        pack.clear();
-        */
         string t = "~";
         vector<string> result = splitByDelimiter(buffer, t);
 

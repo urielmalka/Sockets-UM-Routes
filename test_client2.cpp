@@ -11,21 +11,18 @@ int main()
     t.detach();
     
     map<string, any> args;
+    string meesgae;
 
-    args["message"] = "Hello from client2";
+    meesgae = "Hello from client2 start\n";
 
-    c2->route("/sendMessageToAll",args);
-
-
-    args["message"] = "TOT from client2";
-
-
-    c2->route("/sendMessageToAll",args);
-
-    while (1)
-    {
-        /* code */
+    for (int i=0; i < 100 ; i++){
+        meesgae = meesgae + "Hello from client2 " + to_string(i) + "\n";
     }
+    args["message"] = meesgae;
+    std::cout << meesgae << endl;
+    std::cout << meesgae.size() << endl;
+
+    c2->route("/sendMessageToAll",args);
     
     
     return 0;

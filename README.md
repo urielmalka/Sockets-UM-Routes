@@ -19,7 +19,7 @@
 Before compiling the project, make sure to clone the color library into your project directory:
 
 ```bash
-git clone https://github.com/urielmalka/UColor_C.git color
+git clone https://github.com/urielmalka/UColor_C.git
 ```
 
 ---

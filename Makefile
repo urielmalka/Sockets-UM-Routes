@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -I. -I/path_to/U_Color_C	
+CFLAGS = -I. -I/home/urielmalka/Projects/C++/Print-Color-C
 OBJ_SERVER = test_server.cpp 
 OBJ_CLIENT1 = test_client1.cpp
 OBJ_CLIENT2 = test_client2.cpp 
