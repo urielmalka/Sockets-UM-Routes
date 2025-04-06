@@ -17,6 +17,8 @@
 #include <ctime>
 #include <list>
 
+#include "Sockum/utils/managePack.hpp"
+
 using namespace std;
 
 class NetworkEntity{
@@ -27,6 +29,8 @@ class NetworkEntity{
         int serverSocket;
         int server_port;
         bool isCryptp = false;
+
+        ManagePack* mangePack;
 
         function<string( const string&)> decrypt;
         function<string( const string&)> encrypt;
@@ -43,7 +47,10 @@ class NetworkEntity{
 
 };
 
-NetworkEntity::NetworkEntity(){};
+NetworkEntity::NetworkEntity()
+{
+    mangePack = new ManagePack();
+};
 
 NetworkEntity::~NetworkEntity(){};
 

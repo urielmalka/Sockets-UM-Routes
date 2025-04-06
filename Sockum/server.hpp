@@ -145,6 +145,8 @@ void Server::run()
         
         clients[tempId] = new_socket;
 
+        mangePack->add_cid(tempId);
+
         map<string, any> response;
 
         response["cid"] = tempId;
@@ -216,6 +218,7 @@ void Server::listenerRoutes(int client_id)
     string cid = getClientBySocketID(client_id);
     printcb(RED, "Client %s is disconnect now.\n", cid.c_str());
     clients.erase(cid);
+    mangePack->remove_cid(cid);
     close(client_id);
     
 }
