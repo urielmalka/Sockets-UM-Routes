@@ -12,7 +12,7 @@ const string chars = "abcdefghijklmnopqrstuvwxyz";
 const string CLIENT_NOT_FOUND = "non-cid";
 string generateClientId();
 
-class Server : public NetworkEntity
+class SockumServer : public NetworkEntity
 {
     private:
         
@@ -23,7 +23,7 @@ class Server : public NetworkEntity
         bool logActivied = true;
 
         map<string, function<void(map<string, any>&)> > routes;
-        map<string, function<void(Server, map<string, any>&)> > serverRoutes;
+        map<string, function<void(SockumServer, map<string, any>&)> > serverRoutes;
         map<string, int> clients;
 
         vector<thread> tasks;
@@ -40,29 +40,32 @@ class Server : public NetworkEntity
         void logSend(map<string, any> &args);
 
     public:
-        Server();
-        Server(int PORT);
-        Server(int PORT, int max_conn);
-        ~Server();
+        SockumServer();
+        SockumServer(int PORT);
+        SockumServer(int PORT, int max_conn);
+        ~SockumServer();
 
 
 
-         Server* sendMessageToClient(string route ,string cid ,map<string, any> &args);
-         Server* sendMessageToClientList(string route ,list<string> cids, map<string, any> &args);
-         Server* sendMessageToAll(string route ,map<string, any> &args);
-         Server* closeClientConnection(string cid);
+        SockumServer* sendMessageToClient(string route ,string cid ,map<string, any> &args);
+        SockumServer* sendMessageToClientList(string route ,list<string> cids, map<string, any> &args);
+        SockumServer* sendMessageToAll(string route ,map<string, any> &args);
+        SockumServer* closeClientConnection(string cid);
          
 
         void run();
-        Server* addRoute(string route, function<void(map<string, any>&)> funcRoute);
-        Server* addRoute(string route, function<void(Server, map<string, any>&)> funcRoute);
-        Server* route(string route, map<string, any>& args, int client_id);
+        SockumServer* addRoute(string route, function<void(map<string, any>&)> funcRoute);
+
+        template <typename T>
+        SockumServer* addRoute(string route, function<void(T, map<string, any>&)> funcRoute);
+
+        SockumServer* route(string route, map<string, any>& args, int client_id);
     
 };
 
 
 
-Server::Server()
+SockumServer::SockumServer()
 {
     server_port = 8080;
     max_connection = 128;
@@ -70,7 +73,7 @@ Server::Server()
     coreRoutes();
 }
 
-Server::Server(int PORT)
+SockumServer::SockumServer(int PORT)
 {
     if(PORT < 1) throw runtime_error("PORT must be greater than zero.");
     server_port = PORT;
@@ -78,7 +81,7 @@ Server::Server(int PORT)
     initServer();
 }
 
-Server::Server(int PORT, int max_conn)
+SockumServer::SockumServer(int PORT, int max_conn)
 {
     if(max_conn < 1 || PORT < 1) throw runtime_error("Values must be greater than zero.");
 
@@ -87,7 +90,7 @@ Server::Server(int PORT, int max_conn)
     initServer();
 }
 
-Server::~Server()
+SockumServer::~SockumServer()
 {
     for(auto &t : tasks)
     {
@@ -96,7 +99,7 @@ Server::~Server()
     close(serverSocket);
 }
 
-void Server::initServer()
+void SockumServer::initServer()
 {
     serverSocket =  socket(AF_INET, SOCK_STREAM, 0);
     sockaddr_in serverAddress;
@@ -120,7 +123,7 @@ void Server::initServer()
     }
 }
 
-void Server::run()
+void SockumServer::run()
 {
     cout << "Server is running on PORT: " << server_port << endl;
     
@@ -161,7 +164,7 @@ void Server::run()
     }
 }
 
-void Server::listenerRoutes(int client_id)
+void SockumServer::listenerRoutes(int client_id)
 {   
 
     string route;
@@ -222,25 +225,26 @@ void Server::listenerRoutes(int client_id)
     }
     string cid = getClientBySocketID(client_id);
     printcb(RED, "Client %s is disconnect now.\n", cid.c_str());
-    //clients.erase(cid);
-    //mangePack->remove_cid(cid);
-    //close(client_id);
+    clients.erase(cid);
+    mangePack->remove_cid(cid);
+    close(client_id);
     
 }
 
-Server* Server::addRoute(string route, function<void(map<string, any>&)> funcRoute)
+SockumServer* SockumServer::addRoute(string route, function<void(map<string, any>&)> funcRoute)
 {
     routes[route] = funcRoute;
     return this;
 }
 
-Server* Server::addRoute(string route, function<void(Server, map<string, any>& )> funcRoute)
+template <typename T>
+SockumServer* SockumServer::addRoute(string route, function<void(T, map<string, any>& )> funcRoute)
 {
     serverRoutes[route] = funcRoute;
     return this;
 }
 
-Server* Server::route(string route, map<string, any>& args, int client_id)
+SockumServer* SockumServer::route(string route, map<string, any>& args, int client_id)
 {
     string buffer = route + AT_SIGN_ROUTE + serialize_map(args);
 
@@ -256,7 +260,7 @@ Server* Server::route(string route, map<string, any>& args, int client_id)
 }
 
 
-Server* Server::sendMessageToClient(string route ,string cid ,map<string, any> &args) 
+SockumServer* SockumServer::sendMessageToClient(string route ,string cid ,map<string, any> &args) 
 {
     string buffer = route + AT_SIGN_ROUTE + serialize_map(args);
     int client_id = clients[cid];
@@ -269,7 +273,7 @@ Server* Server::sendMessageToClient(string route ,string cid ,map<string, any> &
 
     return this;
 };
-Server* Server::sendMessageToClientList(string route ,list<string> cids, map<string, any> &args) 
+SockumServer* SockumServer::sendMessageToClientList(string route ,list<string> cids, map<string, any> &args) 
 {
     string buffer = route + AT_SIGN_ROUTE + serialize_map(args);
     vector<string> packs = mangePack->chunk_string_for_network(buffer);
@@ -285,7 +289,7 @@ Server* Server::sendMessageToClientList(string route ,list<string> cids, map<str
     return this;
 };
 
-Server* Server::sendMessageToAll(string route ,map<string, any> &args) 
+SockumServer* SockumServer::sendMessageToAll(string route ,map<string, any> &args) 
 {
     logSend(args);
     
@@ -302,7 +306,7 @@ Server* Server::sendMessageToAll(string route ,map<string, any> &args)
 
     return this;
 };
-Server* Server::closeClientConnection(string cid) 
+SockumServer* SockumServer::closeClientConnection(string cid) 
 {
     int client_id = clients[cid];
     close(client_id);
@@ -311,13 +315,13 @@ Server* Server::closeClientConnection(string cid)
 };
 
 
-void Server::coreRoutes()
+void SockumServer::coreRoutes()
 {   
     //addRoute("/setId", [this](map<string, any> args) {setClientId(args); } );
 
 }
 
-string Server::getClientBySocketID(int sid)
+string SockumServer::getClientBySocketID(int sid)
 {
     for (auto it = clients.begin(); it != clients.end(); ++it)
     {
@@ -328,7 +332,7 @@ string Server::getClientBySocketID(int sid)
 }
 
 
-void Server::logGet(map<string, any> &args)
+void SockumServer::logGet(map<string, any> &args)
 {
     if(!logActivied) return;
 
@@ -341,7 +345,7 @@ void Server::logGet(map<string, any> &args)
     printc(YELLOW, "\b\b\b\b\b\b\b\b}\n");
 }
 
-void Server::logSend(map<string, any> &args)
+void SockumServer::logSend(map<string, any> &args)
 {
     if(!logActivied) return;
 

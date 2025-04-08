@@ -21,7 +21,7 @@
 
 using namespace std;
 
-class NetworkEntity{
+class SockumNetworkEntity{
 
     private:
 
@@ -40,21 +40,21 @@ class NetworkEntity{
 
     public:
         
-        NetworkEntity();
-        ~NetworkEntity();
+        SockumNetworkEntity();
+        ~SockumNetworkEntity();
 
         void setCrypto(function<string( const string&)> d, function<string( const string&)> e);
 
 };
 
-NetworkEntity::NetworkEntity()
+SockumNetworkEntity::SockumNetworkEntity()
 {
     mangePack = new ManagePack();
 };
 
-NetworkEntity::~NetworkEntity(){};
+SockumNetworkEntity::~SockumNetworkEntity(){};
 
-void NetworkEntity::setCrypto(function<string( const string&)> decrypt, function<string( const string&)> encrypt)
+void SockumNetworkEntity::setCrypto(function<string( const string&)> decrypt, function<string( const string&)> encrypt)
 {
     setDecrypt(decrypt);
     setEncrypt(encrypt);

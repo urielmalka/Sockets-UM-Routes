@@ -3,7 +3,7 @@
 
 int main()
 {
-    Client *c2 = new Client();
+    SockumClient *c2 = new SockumClient();
 
     
 
@@ -19,11 +19,18 @@ int main()
         meesgae = meesgae + "Hello from client2 " + to_string(i) + "\n";
     }
     args["message"] = meesgae;
-    std::cout << meesgae << endl;
-    std::cout << meesgae.size() << endl;
+    //std::cout << meesgae << endl;
+    //std::cout << meesgae.size() << endl;
 
     c2->route("/sendMessageToAll",args);
     
+    while (1)
+    {
+        /* code */
+    }
+    
+
+    c2->disconnect();
     
     return 0;
 }

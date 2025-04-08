@@ -12,7 +12,7 @@ void sendMessageToAll(map<string, any> args)
 
 int main()
 {
-    Client *c1 = new Client();
+    SockumClient *c1 = new SockumClient();
 
     c1->addRoute("/sendMessageToAll",sendMessageToAll);
 

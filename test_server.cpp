@@ -2,7 +2,7 @@
 
 
 
-void sendMessage(Server *server, map<string, any> & args)
+void sendMessage(SockumServer *server, map<string, any> & args)
 { 
     server->sendMessageToAll("/sendMessageToAll", args);
 }
@@ -10,7 +10,7 @@ void sendMessage(Server *server, map<string, any> & args)
 
 int main()
 {
-    Server * server = new Server();
+    SockumServer * server = new SockumServer();
 
 
     server->addRoute("/sendMessageToAll", [server](map<string, any> args) {

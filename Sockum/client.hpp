@@ -9,7 +9,7 @@
 
 using namespace std;
 
-class Client : public NetworkEntity
+class SockumClient : public NetworkEntity
 {
     private:
         string client_id;
@@ -26,39 +26,43 @@ class Client : public NetworkEntity
         void listenerRoutes();
 
     public:
-        Client();
-        Client(int PORT);
-        ~Client();
+        SockumClient();
+        SockumClient(int PORT);
+        ~SockumClient();
 
         string getClientID(){ return client_id; }
 
         void run();
-        Client* addRoute(string route, function<void(map<string, any>)> funcRoute);
-        Client* route(string route, map<string, any>& args);
+        SockumClient* addRoute(string route, function<void(map<string, any>)> funcRoute);
+
+        template <typename T>
+        SockumClient* addRoute(string route, function<void(T, map<string, any>)> funcRoute);
+
+        SockumClient* route(string route, map<string, any>& args);
 
         void disconnect() { close(serverSocket); };
 };
 
 
-Client::Client()
+SockumClient::SockumClient()
 {
     server_port = 8080;
     initClient();
 }
 
-Client::Client(int PORT)
+SockumClient::SockumClient(int PORT)
 {
     if(PORT < 1) throw runtime_error("PORT must be greater than zero.");
     server_port = PORT;
     initClient();
 }
 
-Client::~Client()
+SockumClient::~SockumClient()
 {
     close(serverSocket);
 }
 
-void Client::initClient()
+void SockumClient::initClient()
 {
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     serverAddress.sin_family = AF_INET;
@@ -70,7 +74,7 @@ void Client::initClient()
     
 }
 
-void Client::connectClient()
+void SockumClient::connectClient()
 {
     int count_try_connection = 0, is_connected;
     while (count_try_connection < 5)
@@ -89,7 +93,7 @@ void Client::connectClient()
     
 }
 
-void Client::listenerRoutes()
+void SockumClient::listenerRoutes()
 {   
 
     string route;
@@ -153,13 +157,20 @@ void Client::listenerRoutes()
     
 }
 
-Client* Client::addRoute(string route, function<void(map<string, any>)> funcRoute)
+SockumClient* SockumClient::addRoute(string route, function<void(map<string, any>)> funcRoute)
 {
     routes[route] = funcRoute;
     return this;
 }
 
-Client* Client::route(string route, map<string, any>& args)
+template <typename T>
+SockumClient* SockumClient::addRoute(string route, function<void(T, map<string, any>)> funcRoute)
+{
+    routes[route] = funcRoute;
+    return this;
+}
+
+SockumClient* SockumClient::route(string route, map<string, any>& args)
 {
     string buffer = route + "@" + serialize_map(args);
     vector<string> packs = mangePack->chunk_string_for_network(buffer);
@@ -173,18 +184,18 @@ Client* Client::route(string route, map<string, any>& args)
     return this;
 }
 
-void Client::run(){
+void SockumClient::run(){
     listenerRoutes();
 }
 
 
-void Client::setClientId(map<string, any>& args)
+void SockumClient::setClientId(map<string, any>& args)
 {
     client_id = any_cast<string>(args["cid"]);
     printcb(GREEN, "Client %s is connect now.\n",client_id.c_str());
 }
 
-void Client::coreRoutes()
+void SockumClient::coreRoutes()
 {   
     addRoute("/setId", [this](map<string, any> args) {setClientId(args); } );
 }
