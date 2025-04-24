@@ -9,7 +9,7 @@
 
 using namespace std;
 
-class SockumClient : public NetworkEntity
+class SockumClient : public SockumNetworkEntity
 {
     private:
         string client_id;

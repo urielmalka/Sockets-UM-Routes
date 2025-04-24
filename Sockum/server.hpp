@@ -12,7 +12,7 @@ const string chars = "abcdefghijklmnopqrstuvwxyz";
 const string CLIENT_NOT_FOUND = "non-cid";
 string generateClientId();
 
-class SockumServer : public NetworkEntity
+class SockumServer : public SockumNetworkEntity
 {
     private:
         
