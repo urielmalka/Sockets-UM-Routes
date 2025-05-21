@@ -1,21 +1,30 @@
-CC = g++
-CFLAGS = -I. -I/home/urielmalka/Projects/C++/Print-Color-C
-OBJ_SERVER = test_server.cpp 
+# === Compiler and Flags ===
+CXX = g++
+CXXFLAGS = -std=c++17 -I Sockum/include -I Sockum/include/utils -I Sockum/external/UColor_C/include
+LDFLAGS = -L Sockum/build -lSockum
+
+# === Source Files ===
+OBJ_SERVER = test_server.cpp
 OBJ_CLIENT1 = test_client1.cpp
-OBJ_CLIENT2 = test_client2.cpp 
+OBJ_CLIENT2 = test_client2.cpp
 
-all: server client1 client2
+# === Output Binaries ===
+BIN_SERVER = test_server
+BIN_CLIENT1 = test_client1
+BIN_CLIENT2 = test_client2
 
-server: $(OBJ_SERVER)
-	$(CC) -o $@ $^ $(CFLAGS)
+# === Default Target ===
+all: $(BIN_SERVER) $(BIN_CLIENT1) $(BIN_CLIENT2)
 
-client1: $(OBJ_CLIENT1)
-	$(CC) -o $@ $^ $(CFLAGS)
+$(BIN_SERVER): $(OBJ_SERVER)
+	$(CXX) $(OBJ_SERVER) -o $@ $(CXXFLAGS) $(LDFLAGS)
 
-client2: $(OBJ_CLIENT2)
-	$(CC) -o $@ $^ $(CFLAGS)
+$(BIN_CLIENT1): $(OBJ_CLIENT1)
+	$(CXX) $(OBJ_CLIENT1) -o $@ $(CXXFLAGS) $(LDFLAGS)
 
-.PHONY: clean
+$(BIN_CLIENT2): $(OBJ_CLIENT2)
+	$(CXX) $(OBJ_CLIENT2) -o $@ $(CXXFLAGS) $(LDFLAGS)
 
+# === Clean Target ===
 clean:
-	rm -f server client1 client2
+	rm -f $(BIN_SERVER) $(BIN_CLIENT1) $(BIN_CLIENT2)

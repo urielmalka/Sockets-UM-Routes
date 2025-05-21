@@ -1,4 +1,4 @@
-#include <Sockum/Sockum.hpp>
+#include <Sockum.hpp>
 
 
 void sendMessageToAll(map<string, any> args)
