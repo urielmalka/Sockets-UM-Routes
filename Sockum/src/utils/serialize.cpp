@@ -1,4 +1,5 @@
 #include "utils/serialize.hpp"
+#include "utils/base64.hpp"
 
 string serialize_cast(any a) {
     if (a.type() == typeid(string)) {
@@ -25,7 +26,7 @@ string serialize_map(const map<string, any>& args) {
 
     for (const auto& pair : args) {
         buffer << pair.first << CELL_MIDDLE_VALUE
-               << (pair.second.has_value() ? serialize_cast(pair.second) : "")
+               << (pair.second.has_value() ? base64_encode(serialize_cast(pair.second)) : "")
                << CELL_LAST_VALUE;
     }
 
@@ -52,7 +53,7 @@ int serialize_str(const string& s, map<string, any>* args) {
         second = tempS.substr(pos, end - pos);
         pos = end + CELL_LAST_VALUE.length();
 
-        (*args)[first] = static_cast<any>(second);
+        (*args)[first] = static_cast<any>(base64_decode(second));
     }
 
     return SUCCESS_SERIALIZE_PACK;

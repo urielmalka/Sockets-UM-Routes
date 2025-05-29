@@ -85,13 +85,13 @@ void SockumClient::listenerRoutes()
 
             int index = serialize_route(c, &route);
             if(index == ERROR_ROUTE){
-                printcu(RED,"Error route socket: %s\n",s.c_str());
+                printcu(RED,"Error route socket: %s\n",s.substr(0,50).c_str());
                 continue;
             };
 
             memmove(c, c + index, s.size() + 1);
             if(serialize_str(c, &pack) == ERROR_SERIALIZE_PACK){
-                printcu(RED,"Error pack socket: %s\n",s.c_str());
+                printcu(RED,"Error pack socket: %s\n",s.substr(0,50).c_str());
                 continue;
             };
   
@@ -99,7 +99,7 @@ void SockumClient::listenerRoutes()
                 auto func = routes.at(route);
                 func(pack);
             }catch(const out_of_range &e){
-                printc(RED,"Error: %s not found\n",route.c_str());
+                printc(RED,"Error: %s not found\n",route.substr(0,50).c_str());
             }
 
             delete[] c;
@@ -134,8 +134,6 @@ SockumClient* SockumClient::route(string route, map<string, any>& args)
     for(const string &p : packs){
         send(serverSocket, p.c_str(), p.size(), 0);
     }
-
-
 
     return this;
 }
