@@ -12,17 +12,17 @@ using namespace std;
 class ManagePack
 {
     private:
-        map<string, string> network_packs;
-        int maxPack = 1023; // N - 1 
+        map<string, map<int,string>> network_packs;
+        int maxPack = 32768; 
 
     public:
         ManagePack();
         ManagePack(int maxP);
         ~ManagePack();
 
-        bool manegePack(const string& cid, const string& pack);
-        string getPack(const string& cid);
-        vector<string> chunk_string_for_network(const string& pack);
+        bool manegePack(const string& cid, const string& pack, int& message_id);
+        string getPack(const string& cid, int messageId);
+        vector<string> chunk_string_for_network(const string& pack, int message_id);
 
         bool add_cid(const string& cid);
         bool remove_cid(const string& cid);

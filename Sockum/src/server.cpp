@@ -104,21 +104,23 @@ void SockumServer::listenerRoutes(int client_id)
 
     string route;
     map<string, any> pack;
+    int message_id;
 
     printcb(GREEN, "Client %d is connect now.\n", client_id);
 
     while (1)
     {
-        char buffer[BUFFER_SIZE] = {0};
+        char buffer[MAX_CHUNK_SIZE]= {0};
+        size_t actual_size = MAX_CHUNK_SIZE;
 
-        int bytes_received = recv(client_id, buffer, sizeof(buffer), 0);
-        if (bytes_received <= 0) break;
+        if (!recv_all(client_id,buffer, actual_size)) break;
 
-        string strBuffer(buffer,bytes_received);
+        string strBuffer(buffer,actual_size);
 
-        if(!mangePack->manegePack(getClientBySocketID(client_id),strBuffer)) continue;
+        // need to optimaze
+        if(!mangePack->manegePack(getClientBySocketID(client_id),strBuffer,message_id)) continue;
 
-        string packBuffer = mangePack->getPack(getClientBySocketID(client_id));
+        string packBuffer = mangePack->getPack(getClientBySocketID(client_id),message_id);
         
         string t = "~";
         vector<string> result = splitByDelimiter(packBuffer.c_str(), t);
@@ -183,11 +185,12 @@ SockumServer* SockumServer::route(string route, map<string, any>& args, int clie
 {
     string buffer = route + AT_SIGN_ROUTE + serialize_map(args);
 
-
     logSend(args);
-
-    vector<string> packs = mangePack->chunk_string_for_network(buffer);
+    int msgID = generateMessageID();
+    vector<string> packs = mangePack->chunk_string_for_network(buffer,msgID);
     for(const string &p : packs){
+        uint32_t len = htonl(p.size());
+        send(client_id, &len, sizeof(len), 0);
         send(client_id, p.c_str(), p.size(), MSG_NOSIGNAL);
     }
     
@@ -199,10 +202,12 @@ SockumServer* SockumServer::sendMessageToClient(string route ,string cid ,map<st
 {
     string buffer = route + AT_SIGN_ROUTE + serialize_map(args);
     int client_id = clients[cid];
-
-    vector<string> packs = mangePack->chunk_string_for_network(buffer);
+    int msgID = generateMessageID();
+    vector<string> packs = mangePack->chunk_string_for_network(buffer,msgID);
 
     for(const string &p : packs){
+        uint32_t len = htonl(p.size());
+        send(client_id, &len, sizeof(len), 0);
         send(client_id, p.c_str(), p.size(), 0);
     }
 
@@ -211,12 +216,15 @@ SockumServer* SockumServer::sendMessageToClient(string route ,string cid ,map<st
 SockumServer* SockumServer::sendMessageToClientList(string route ,list<string> cids, map<string, any> &args) 
 {
     string buffer = route + AT_SIGN_ROUTE + serialize_map(args);
-    vector<string> packs = mangePack->chunk_string_for_network(buffer);
+    int msgID = generateMessageID();
+    vector<string> packs = mangePack->chunk_string_for_network(buffer,msgID);
     int client_id;
 
     for(const string &p : packs){
+        uint32_t len = htonl(p.size());
         for(string &cid : cids){
             client_id = clients[cid];
+            send(client_id, &len, sizeof(len), 0);
             send(client_id, p.c_str(), p.size(), 0);
         }
     }
@@ -229,10 +237,13 @@ SockumServer* SockumServer::sendMessageToAll(string route ,map<string, any> &arg
     logSend(args);
     
     string buffer = route + AT_SIGN_ROUTE + serialize_map(args);
-    vector<string> packs = mangePack->chunk_string_for_network(buffer);
+    int msgID = generateMessageID();
+    vector<string> packs = mangePack->chunk_string_for_network(buffer,msgID);
 
     for(auto &client : clients){
         for(const string &p : packs){
+            uint32_t len = htonl(p.size());
+            send(client.second, &len, sizeof(len), 0);
             ssize_t bytes_sent = send(client.second, p.c_str(), p.size(), MSG_NOSIGNAL);
             if(bytes_sent < 0)
                 printc(RED, "Send Faild\n");
@@ -275,7 +286,7 @@ void SockumServer::logGet(map<string, any> &args)
     printc(YELLOW, "\n\t{\n\t\t");
     for(auto &pair : args)
     {
-        printc(YELLOW, "\"%s\": \"%s\" \n\t\t",pair.first.c_str(), any_cast<string>(pair.second).c_str());
+        printc(YELLOW, "\"%s\": \"%s\" \n\t\t",pair.first.substr(0,50).c_str(), any_cast<string>(pair.second).substr(0,50).c_str());
     }
     printc(YELLOW, "\b\b\b\b\b\b\b\b}\n");
 }
@@ -288,7 +299,7 @@ void SockumServer::logSend(map<string, any> &args)
     printc(GREEN, "\n\t{\n\t\t");
     for(auto &pair : args)
     {
-        printc(GREEN, "\"%s\": \"%s\" \n\t\t",pair.first.c_str(), any_cast<string>(pair.second).c_str());
+        printc(GREEN, "\"%s\": \"%s\" \n\t\t",pair.first.substr(0,50).c_str(), any_cast<string>(pair.second).substr(0,50).c_str());
     }
     printc(GREEN, "\b\b\b\b\b\b\b\b}\n");
 }

@@ -5,8 +5,6 @@
 #include "networkEntity.hpp"
 #include "utils/serialize.hpp"
 
-#define BUFFER_SIZE 1024  
-
 using namespace std;
 
 class SockumClient : public SockumNetworkEntity
@@ -25,6 +23,8 @@ class SockumClient : public SockumNetworkEntity
         
         void listenerRoutes();
 
+        void routeFileProcess(map<string,any>& args);
+
     public:
         SockumClient();
         SockumClient(int PORT);
@@ -33,12 +33,15 @@ class SockumClient : public SockumNetworkEntity
         string getClientID(){ return client_id; }
 
         void run();
+
         SockumClient* addRoute(string route, function<void(map<string, any>)> funcRoute);
+        SockumClient* addFileRoute(string route);
 
         template <typename T>
         SockumClient* addRoute(string route, function<void(T, map<string, any>)> funcRoute);
 
         SockumClient* route(string route, map<string, any>& args);
+        SockumClient* routeFile(string route, string path);
 
         void disconnect() { close(serverSocket); };
 };

@@ -4,9 +4,7 @@
 #include "networkEntity.hpp"
 #include "utils/serialize.hpp"
 
-using namespace std;
-
-#define BUFFER_SIZE 1024  
+using namespace std; 
 
 const string chars = "abcdefghijklmnopqrstuvwxyz";
 const string CLIENT_NOT_FOUND = "non-cid";

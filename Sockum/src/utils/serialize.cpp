@@ -12,6 +12,8 @@ string serialize_cast(any a) {
         return to_string(any_cast<double>(a));
     } else if (a.type() == typeid(bool)) {
         return any_cast<bool>(a) ? "true" : "false";
+    }else if (a.type() == typeid(std::uintmax_t)){
+        return to_string(any_cast<std::uintmax_t>(a)); 
     }
     return "<unsupported>";
 }

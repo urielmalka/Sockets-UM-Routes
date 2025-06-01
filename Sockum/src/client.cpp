@@ -1,4 +1,7 @@
 #include "client.hpp"
+#include "utils/sockumfile.hpp"
+#include <thread>   
+#include <chrono> 
 
 SockumClient::SockumClient()
 {
@@ -54,25 +57,25 @@ void SockumClient::listenerRoutes()
 
     string route;
     map<string, any> pack;
+    int message_id;
 
     while (1)
     {
-        char buffer[BUFFER_SIZE] = {0};
+        char buffer[MAX_CHUNK_SIZE] = {0};
+        size_t actual_size = MAX_CHUNK_SIZE;
 
-        int bytes_received = recv(serverSocket, buffer, sizeof(buffer), 0);
-        if (bytes_received <= 0) break;
+        if (!recv_all(serverSocket,buffer, actual_size)) break;
 
-    
+        string strBuffer(buffer,actual_size);
+
         /*if(isCryptp){
             string de_buffer = decrypt(buffer);
             strncpy(buffer,de_buffer.c_str(),BUFFER_SIZE - 1);
         }*/
 
-        string strBuffer(buffer,bytes_received);
+        if(!mangePack->manegePack("local",strBuffer,message_id)) continue;
 
-        if(!mangePack->manegePack("local",strBuffer)) continue;
-
-        string packBuffer = mangePack->getPack("local");
+        string packBuffer = mangePack->getPack("local",message_id);
 
         string t = "~";
         vector<string> result = splitByDelimiter(packBuffer, t);
@@ -119,6 +122,12 @@ SockumClient* SockumClient::addRoute(string route, function<void(map<string, any
     return this;
 }
 
+SockumClient* SockumClient::addFileRoute(string route)
+{
+    routes[route] = [this](map<string, any> args) { routeFileProcess(args); };;
+    return this;
+}
+
 template <typename T>
 SockumClient* SockumClient::addRoute(string route, function<void(T, map<string, any>)> funcRoute)
 {
@@ -129,13 +138,60 @@ SockumClient* SockumClient::addRoute(string route, function<void(T, map<string, 
 SockumClient* SockumClient::route(string route, map<string, any>& args)
 {
     string buffer = route + "@" + serialize_map(args);
-    vector<string> packs = mangePack->chunk_string_for_network(buffer);
+
+    int msgID = generateMessageID();
+
+    vector<string> packs = mangePack->chunk_string_for_network(buffer,msgID);
 
     for(const string &p : packs){
+        uint32_t len = htonl(p.size());
+        send(serverSocket, &len, sizeof(len), 0);
         send(serverSocket, p.c_str(), p.size(), 0);
     }
 
     return this;
+}
+
+SockumClient* SockumClient::routeFile(string route, string path)
+{
+    fs::path filePath(path);
+    string filename = filePath.filename().string();
+
+    std::uintmax_t filesize = get_file_size(path);
+    std::uintmax_t numChunks = (filesize + 204800 - 1) / 204800;
+
+    map<string, any> args;
+
+    for(int i=0; i < numChunks ; i++)
+    {
+        args["filename"] = filename;
+        args["content"] = readChunkFromFile(path, i);
+        args["size"] = filesize;
+        args["load"] = i * 204800;
+        string buffer = route + "@" + serialize_map(args);
+        int msgID = generateMessageID();
+        vector<string> packs = mangePack->chunk_string_for_network(buffer,msgID);
+
+        for(const string &p : packs){
+            uint32_t len = htonl(p.size());
+            send(serverSocket, &len, sizeof(len), 0);
+            send(serverSocket, p.c_str(), p.size(), 0);
+        }
+
+    }
+
+    return this;
+}
+
+void SockumClient::routeFileProcess(map<string,any>& args)
+{
+
+    string filename = "new/" + any_cast<string>(args["filename"]);
+    string content = any_cast<string>(args["content"]);
+    std::uintmax_t file_size = std::stoull(any_cast<std::string>(args["size"]));
+    std::uintmax_t file_load = std::stoull(any_cast<std::string>(args["load"]));
+
+    appendChunkToFile(filename, content);
 }
 
 void SockumClient::run(){

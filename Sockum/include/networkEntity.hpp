@@ -15,21 +15,29 @@
 #include <stdexcept>
 #include <ctime>
 #include <list>
+#include <atomic>
+#include <mutex>
 
 #include "utils/managePack.hpp"
 
 #include "../external/UColor_C/include/color.h"
+
+#define MAX_CHUNK_SIZE 32768
 
 using namespace std;
 
 class SockumNetworkEntity{
 
     private:
+        std::mutex id_mutex; 
+        int currentMessageID = 0;
 
     protected:
         int serverSocket;
         int server_port;
         bool isCryptp = false;
+
+        bool recv_all(int socket, char* buffer, size_t& size);
 
         ManagePack* mangePack;
 
@@ -38,6 +46,12 @@ class SockumNetworkEntity{
 
         void setDecrypt(function<string( const string&)> d) { decrypt = d; };
         void setEncrypt(function<string( const string&)> e) { encrypt = e; };
+
+        int generateMessageID() {
+            std::lock_guard<std::mutex> lock(id_mutex);
+            return currentMessageID++;
+        }
+    
 
     public:
         
