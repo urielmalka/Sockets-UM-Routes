@@ -42,7 +42,7 @@ void SockumServer::initServer()
     serverAddress.sin_port = htons(server_port);
     serverAddress.sin_addr.s_addr = INADDR_ANY;
 
-    if( bind(serverSocket, (struct sockaddr*)&serverAddress,sizeof(serverAddress)) < 0)
+    if( ::bind(serverSocket, (struct sockaddr*)&serverAddress,sizeof(serverAddress)) < 0)
     {
         perror("Bind failed");
         close(serverSocket);
