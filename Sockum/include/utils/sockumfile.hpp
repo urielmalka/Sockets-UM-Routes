@@ -1,3 +1,20 @@
+/**
+ * @author Uriel Malka - urielmalka1@gmail.com
+ * @brief File utility functions for chunk-based file transfer.
+ * 
+ * This header provides utility functions to support file reading and writing
+ * in fixed-size chunks, which is useful for sending files over a network in segments.
+ * It leverages C++17's <filesystem> and standard I/O streams.
+ * 
+ * Core functionalities:
+ * - `get_file_size`: Retrieves and prints the size of a file in bytes.
+ * - `readChunkFromFile`: Reads a specific chunk from a file based on chunk index and size.
+ * - `appendChunkToFile`: Appends binary data to the end of a file.
+ * 
+ * These utilities are designed to support the Sockum system's file routing and transfer mechanisms.
+ */
+
+
 #ifndef SOCKUMFILE_HPP
 #define SOCKUMFILE_HPP
 
@@ -21,6 +38,15 @@ std::uintmax_t get_file_size(std::string path)
     return 0;
 }
 
+
+/**
+ * @brief Reads a specific chunk from a binary file.
+ * @param filename The path to the file.
+ * @param chunkIndex The zero-based index of the chunk to read.
+ * @param chunkSize The size of each chunk in bytes (default is 200 KB).
+ * @return A string containing the read bytes (may be smaller than chunkSize at EOF).
+ * @throws std::runtime_error if the file cannot be opened.
+ */
 
 std::string readChunkFromFile(const std::string& filename, size_t chunkIndex, size_t chunkSize = 204800) {
     std::ifstream file(filename, std::ios::binary);

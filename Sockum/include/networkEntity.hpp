@@ -1,3 +1,21 @@
+/**
+ * @author Uriel Malka - urielmalka1@gmail.com
+ * @brief Base network entity class for Sockum client and server implementations.
+ * 
+ * The SockumNetworkEntity class provides shared infrastructure for both SockumClient and SockumServer.
+ * It handles socket setup, message ID generation, encryption/decryption logic,
+ * and packet management through the ManagePack utility.
+ * 
+ * Core functionalities include:
+ * - Initialization and cleanup of network socket
+ * - Generating unique message IDs (thread-safe)
+ * - Optional encryption and decryption support for sent/received messages
+ * - Receiving full messages using recv_all
+ * - Access to the ManagePack utility for chunking large messages
+ */
+
+
+
 #ifndef NETWORKENTITY_HPP 
 #define NETWORKENTITY_HPP
 

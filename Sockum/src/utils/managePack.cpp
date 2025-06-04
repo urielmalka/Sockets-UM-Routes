@@ -15,24 +15,6 @@ int extractIntBeforePipe(const std::string& input) {
     std::string numberPart = input.substr(0, pipePos);
     return std::stoi(numberPart); 
 }
-/*
-std::string mapToString(const std::map<int, std::string>& m) {
-    std::ostringstream oss;
-    auto it = m.find(-1);
-
-    for (const auto& [key, value] : m) {
-        if (key != -1) {
-            oss << value;
-        }
-    }
-
-    if (it != m.end()) {
-        oss << it->second;
-    }
-
-    return oss.str();
-}
-*/
 
 
 ManagePack::ManagePack(){}
@@ -50,8 +32,6 @@ bool ManagePack::manegePack(const string& cid, const string& pack, int& message_
 
     int messageId = extractIntBeforePipe(pack);
     message_id = messageId;
-
-    std::cout << "message_id: " << message_id << endl;
 
     size_t pipePos = pack.find('|');
     if (pipePos == std::string::npos) {
@@ -78,26 +58,6 @@ string ManagePack::getPack(const string& cid, int messageId)
         return "";
     }
 }
-
-
-/*
-string ManagePack::chunk_string_for_network(const string& pack)
-{
-    string result;
-    for(size_t i=0; i < pack.length() ; i += maxPack )
-    {
-        if(i + maxPack >= pack.length())
-        {
-            result = result + '1' + pack.substr(i, maxPack);
-        }else{
-            result = result + '0' + pack.substr(i, maxPack);
-        }
-
-    }
-
-    return result;
-}
-*/
 
 
 vector<string> ManagePack::chunk_string_for_network(const string& pack, int message_id)

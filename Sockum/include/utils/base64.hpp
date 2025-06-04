@@ -1,3 +1,19 @@
+/**
+ * @author Uriel Malka - urielmalka1@gmail.com
+ * @brief Utility functions for Base64 encoding and decoding.
+ * 
+ * This header defines two standalone functions for encoding and decoding strings using the Base64 algorithm.
+ * 
+ * Base64 is commonly used to encode binary data as ASCII text, useful for:
+ * - Embedding binary data in text-based formats (e.g., JSON, XML)
+ * - Sending binary data over media that are designed to handle text
+ * 
+ * Functions:
+ * - std::string base64_encode(const std::string& in): Encodes a binary or ASCII string to Base64 format.
+ * - std::string base64_decode(const std::string& in): Decodes a Base64-encoded string back to its original form.
+ */
+
+
 #ifndef BASE64_HPP
 #define BASE64_HPP
 
@@ -16,7 +32,12 @@ static const std::string base64_chars =
              "abcdefghijklmnopqrstuvwxyz"
              "0123456789+/";
 
-// Base64 encode
+/**
+ * @brief Encodes a string into Base64 format.
+ * @param in The input string to encode.
+ * @return A Base64-encoded representation of the input.
+ */
+
 std::string base64_encode(const std::string& in) {
     std::string out;
     int val=0, valb=-6;
@@ -33,7 +54,6 @@ std::string base64_encode(const std::string& in) {
     return out;
 }
 
-// Base64 decode
 std::string base64_decode(const std::string& in) {
     std::string out;
     std::vector<int> T(256, -1);

@@ -1,3 +1,20 @@
+/**
+ * @author Uriel Malka - urielmalka1@gmail.com
+ * @brief A TCP server implementation for managing multiple Sockum clients.
+ * 
+ * The SockumServer class is a specialized network server that extends the SockumNetworkEntity base class.
+ * It manages incoming client connections, provides routing of messages based on route identifiers,
+ * supports sending messages to individual clients, groups of clients, or all connected clients,
+ * and enables server-side route logic to handle requests from clients.
+ * 
+ * Core functionalities include:
+ * - Listening for and handling multiple client connections via threads
+ * - Routing incoming messages to custom logic via registered route functions
+ * - Tracking connected clients via unique client IDs
+ * - Broadcasting or directing messages with structured data (`map<string, any>`)
+ * - Supporting core internal routes such as client registration and server logging
+ */
+
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
