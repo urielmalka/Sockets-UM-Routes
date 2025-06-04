@@ -14,7 +14,7 @@
  */
 
 
-#ifndef MANEGEPACK_HPP
+#ifndef MANAGEPACK_HPP
 #define MANAGEPACK_HPP
 
 #include <string>
