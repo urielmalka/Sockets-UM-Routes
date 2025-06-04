@@ -64,7 +64,7 @@ class SockumServer : public SockumNetworkEntity
 
         SockumServer* sendMessageToClient(string route ,string cid ,map<string, any> &args);
         SockumServer* sendMessageToClientList(string route ,list<string> cids, map<string, any> &args);
-        SockumServer* sendMessageToAll(string route ,map<string, any> &args);
+        SockumServer* sendMessageToAll(string route ,map<string, any> &args, bool include_sender = false );
         SockumServer* closeClientConnection(string cid);
          
 

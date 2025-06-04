@@ -40,7 +40,7 @@ class SockumClient : public SockumNetworkEntity
         
         void listenerRoutes();
 
-        void routeFileProcess(map<string,any>& args, const string &path);
+        void routeFileProcess(map<string,any>& args, const string &save_path);
 
     public:
         SockumClient();
@@ -52,7 +52,7 @@ class SockumClient : public SockumNetworkEntity
         void run();
 
         SockumClient* addRoute(string route, function<void(map<string, any>)> funcRoute);
-        SockumClient* addFileRoute(string route,const string& path = "");
+        SockumClient* addFileRoute(string route,const string path = "");
 
         template <typename T>
         SockumClient* addRoute(string route, function<void(T, map<string, any>)> funcRoute);

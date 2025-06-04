@@ -232,7 +232,7 @@ SockumServer* SockumServer::sendMessageToClientList(string route ,list<string> c
     return this;
 };
 
-SockumServer* SockumServer::sendMessageToAll(string route ,map<string, any> &args) 
+SockumServer* SockumServer::sendMessageToAll(string route ,map<string, any> &args, bool include_sender) 
 {
     logSend(args);
     
@@ -241,6 +241,9 @@ SockumServer* SockumServer::sendMessageToAll(string route ,map<string, any> &arg
     vector<string> packs = mangePack->chunk_string_for_network(buffer,msgID);
 
     for(auto &client : clients){
+
+        if(!include_sender && client.first == any_cast<string>(args["cid"])) continue;
+
         for(const string &p : packs){
             uint32_t len = htonl(p.size());
             send(client.second, &len, sizeof(len), 0);

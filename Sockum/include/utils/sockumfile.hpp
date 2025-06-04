@@ -22,8 +22,12 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <chrono>
+#include <atomic>
 
 namespace fs = std::filesystem;
+
+const int FILE_CHUNK = 204800;
 
 std::uintmax_t get_file_size(std::string path)
 {
@@ -66,7 +70,7 @@ std::string readChunkFromFile(const std::string& filename, size_t chunkIndex, si
 }
 
 void appendChunkToFile(const std::string& filename, const std::string& content) {
-    std::ofstream file(filename, std::ios::binary | std::ios::app); // פתיחה במצב בינארי + append
+    std::ofstream file(filename, std::ios::binary | std::ios::app);
     if (!file.is_open()) {
         throw std::runtime_error("Failed to open file for appending: " + filename);
     }
@@ -74,6 +78,22 @@ void appendChunkToFile(const std::string& filename, const std::string& content) 
     file.write(content.c_str(), content.size());
     file.close();
 }
+
+
+
+
+
+std::string generateFileId()
+{
+    static std::atomic<int> counter{0}; 
+    auto now = std::chrono::system_clock::now();
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+
+    int unique = counter.fetch_add(1);
+    return std::to_string(ms) + "_" + std::to_string(unique);
+}
+
+
 
 
 #endif
