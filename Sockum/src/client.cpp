@@ -2,6 +2,8 @@
 #include "utils/sockumfile.hpp"
 #include <thread>   
 #include <chrono> 
+#include <filesystem>
+#include <regex>
 
 SockumClient::SockumClient()
 {
@@ -122,9 +124,9 @@ SockumClient* SockumClient::addRoute(string route, function<void(map<string, any
     return this;
 }
 
-SockumClient* SockumClient::addFileRoute(string route)
+SockumClient* SockumClient::addFileRoute(string route, const string path)
 {
-    routes[route] = [this](map<string, any> args) { routeFileProcess(args); };;
+    routes[route] = [this, path](map<string, any> args) { routeFileProcess(args, path); };;
     return this;
 }
 
@@ -158,16 +160,21 @@ SockumClient* SockumClient::routeFile(string route, string path)
     string filename = filePath.filename().string();
 
     std::uintmax_t filesize = get_file_size(path);
-    std::uintmax_t numChunks = (filesize + 204800 - 1) / 204800;
+    std::uintmax_t numChunks = (filesize + FILE_CHUNK - 1) / FILE_CHUNK;
+
+    string fileId = "." + generateFileId();
 
     map<string, any> args;
 
     for(int i=0; i < numChunks ; i++)
     {
-        args["filename"] = filename;
+        args["filename"] = filename + fileId;
         args["content"] = readChunkFromFile(path, i);
         args["size"] = filesize;
-        args["load"] = i * 204800;
+        args["load"] = (1+i) * FILE_CHUNK > filesize ? filesize : i * FILE_CHUNK;
+        args["finished"] =  (1+i) * FILE_CHUNK > filesize;
+
+
         string buffer = route + "@" + serialize_map(args);
         int msgID = generateMessageID();
         vector<string> packs = mangePack->chunk_string_for_network(buffer,msgID);
@@ -183,15 +190,39 @@ SockumClient* SockumClient::routeFile(string route, string path)
     return this;
 }
 
-void SockumClient::routeFileProcess(map<string,any>& args)
+void SockumClient::routeFileProcess(map<string,any>& args, const string &save_path)
 {
+    string filename;
+    if(save_path.length() > 0){
+        filename = save_path + "/";
+    }
+    filename += any_cast<string>(args["filename"]);
 
-    string filename = "new/" + any_cast<string>(args["filename"]);
     string content = any_cast<string>(args["content"]);
     std::uintmax_t file_size = std::stoull(any_cast<std::string>(args["size"]));
     std::uintmax_t file_load = std::stoull(any_cast<std::string>(args["load"]));
 
     appendChunkToFile(filename, content);
+
+
+    if (args.find("finished") != args.end() 
+                        && 
+                        (any_cast<std::string>(args["finished"]) == "true" || 
+                        any_cast<std::string>(args["finished"]) == "1")) 
+    {
+        size_t last_dot = filename.rfind('.');
+        if (last_dot != std::string::npos) {
+            std::string base_filename = filename.substr(0, last_dot);
+            std::string new_filename = base_filename;
+            int counter = 1;
+            while (fs::exists(new_filename)) {
+                new_filename = base_filename + " (" + std::to_string(counter++) + ")";
+            }
+            fs::rename(filename, new_filename); 
+            //std::cout << "File finalized: " << new_filename << std::endl;
+        }
+    }
+
 }
 
 void SockumClient::run(){
