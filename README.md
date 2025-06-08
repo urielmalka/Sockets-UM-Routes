@@ -2,7 +2,12 @@
 
 # 🧦 Sockum
 
-`sockum` is a C++ client-server communication framework using TCP sockets. It supports multiple simultaneous clients, custom route handling, and a modular design for extending server/client functionality. The framework includes basic serialization for structured data exchange and route-based request handling.
+**Sockum** is a lightweight, modular C++ framework for TCP-based client-server communication. It enables easy construction of networked applications by supporting:
+
+- 🔁 Multiple simultaneous clients
+- 🔧 Custom route-based request handling
+- 📦 Simple serialization for structured data exchange
+- 🧩 Modular architecture for extensibility
 
 ---
 
@@ -14,47 +19,50 @@
 
 ---
 
-## 🎨 Download the Color Library
-
-Before compiling the project, make sure to clone the color library into your project directory:
-
-```bash
-git clone https://github.com/urielmalka/UColor_C.git
-```
-
 ---
 
 ## 🛠️ Compilation
 
-To compile the project, run:
+To compile the project:
+
+```bash
+mkdir build
+cd build
+cmake ..
+make
+```
+
+This will generate all necessary executables.
+
+---
+
+## 🚀 Running the Example Applications
+
+1. complie the test files:
 
 ```bash
 make
 ```
 
-This will generate the `server` and `client1` and `client2` executables.
-
----
-
-## 🚀 Running the App
-
-1. In the first terminal, start the server:
+2. In the first terminal, start the server:
 
 ```bash
-./server
+./test_server
 ```
 
-2. In a second terminal, run the first client:
+3. In a second terminal, run the first client:
 
 ```bash
-./client1
+./test_client1
 ```
 
-3. In a third terminal, run the second client:
+4. In a third terminal, run the second client:
 
 ```bash
-./client2
+./test_client2
 ```
+
+Each client will connect to the server, send messages, and receive route-based responses.
 
 ---
 
