@@ -1,22 +1,32 @@
 #include "utils/serialize.hpp"
 #include "utils/base64.hpp"
 
-string serialize_cast(any a) {
-    if (a.type() == typeid(string)) {
-        return any_cast<string>(a);
-    } else if (a.type() == typeid(const char*)) {
-        return string(any_cast<const char*>(a));
-    } else if (a.type() == typeid(int)) {
-        return to_string(any_cast<int>(a));
-    } else if (a.type() == typeid(double)) {
-        return to_string(any_cast<double>(a));
-    } else if (a.type() == typeid(bool)) {
-        return any_cast<bool>(a) ? "true" : "false";
-    }else if (a.type() == typeid(std::uintmax_t)){
-        return to_string(any_cast<std::uintmax_t>(a)); 
+#include <any>
+#include <string>
+#include <unordered_map>
+#include <typeindex>
+#include <functional>
+
+using namespace std;
+
+string serialize_cast(const any a) {
+    static const unordered_map<type_index, function<string(const any&)>> serializers = {
+        {type_index(typeid(string)), [](const any& val) { return any_cast<string>(val); }},
+        {type_index(typeid(const char*)), [](const any& val) { return string(any_cast<const char*>(val)); }},
+        {type_index(typeid(int)), [](const any& val) { return to_string(any_cast<int>(val)); }},
+        {type_index(typeid(double)), [](const any& val) { return to_string(any_cast<double>(val)); }},
+        {type_index(typeid(float)), [](const any& val) { return to_string(any_cast<float>(val)); }},
+        {type_index(typeid(bool)), [](const any& val) { return any_cast<bool>(val) ? "true" : "false"; }},
+        {type_index(typeid(uintmax_t)), [](const any& val) { return to_string(any_cast<uintmax_t>(val)); }},
+    };
+
+    auto it = serializers.find(type_index(a.type()));
+    if (it != serializers.end()) {
+        return it->second(a);
     }
     return "<unsupported>";
 }
+
 
 string serialize_map(const map<string, any>& args) {
     ostringstream buffer;

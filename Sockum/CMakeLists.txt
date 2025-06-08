@@ -11,6 +11,12 @@ set(UCOLOR_HEADER ${UCOLOR_DIR}/include/color.h)
 if(NOT EXISTS ${UCOLOR_HEADER})
     message(STATUS "Downloading UColor_C...")
 
+    # Ensure 'external' directory exists
+    if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external)
+        file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external)
+    endif()
+
+
     file(DOWNLOAD
         https://github.com/urielmalka/UColor_C/archive/refs/heads/main.zip
         ${CMAKE_CURRENT_BINARY_DIR}/UColor_C.zip

@@ -235,6 +235,14 @@ SockumServer* SockumServer::sendMessageToClientList(string route ,list<string> c
 SockumServer* SockumServer::sendMessageToAll(string route ,map<string, any> &args, bool include_sender) 
 {
     logSend(args);
+
+    try {
+        args.at("cid");
+    } catch (const std::out_of_range& e) {
+        printcb(RED,"Missing 'cid' in args: %s\n",e.what());
+        return this;
+    }
+
     
     string buffer = route + AT_SIGN_ROUTE + serialize_map(args);
     int msgID = generateMessageID();
