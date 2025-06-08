@@ -17,9 +17,6 @@
 
 ---
 
----
-
----
 
 ## 🛠️ Compilation
 
@@ -38,7 +35,7 @@ This will generate all necessary executables.
 
 ## 🚀 Running the Example Applications
 
-1. complie the test files:
+1. return to main project folder to complie the test files:
 
 ```bash
 make
