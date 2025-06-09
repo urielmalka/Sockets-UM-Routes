@@ -37,6 +37,7 @@
 #include <mutex>
 
 #include "utils/managePack.hpp"
+#include "room.hpp"
 
 #include "../external/UColor_C/include/color.h"
 
@@ -54,6 +55,8 @@ class SockumNetworkEntity{
         int serverSocket;
         int server_port;
         bool isCryptp = false;
+
+        vector<Room> rooms;
 
         bool recv_all(int socket, char* buffer, size_t& size);
 
@@ -77,6 +80,8 @@ class SockumNetworkEntity{
         ~SockumNetworkEntity();
 
         void setCrypto(function<string( const string&)> d, function<string( const string&)> e);
+
+        void addRoom(const string& room_name);
 
 };
 
