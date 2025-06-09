@@ -4,8 +4,8 @@ CXXFLAGS = -std=c++17 -I Sockum/include -I Sockum/include/utils -I Sockum/extern
 LDFLAGS = -L Sockum/build -lSockum
 
 # === Source Files ===
-OBJ_SERVER = float_server.cpp
-OBJ_CLIENT1 = float_client.cpp
+OBJ_SERVER = test_server.cpp
+OBJ_CLIENT1 = test_client.cpp
 OBJ_CLIENT2 = test_client2.cpp
 
 # === Output Binaries ===
