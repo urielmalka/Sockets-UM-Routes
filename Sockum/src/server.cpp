@@ -274,8 +274,43 @@ SockumServer* SockumServer::closeClientConnection(string cid)
 
 void SockumServer::coreRoutes()
 {   
-    //addRoute("/setId", [this](map<string, any> args) {setClientId(args); } );
+    addRoute("join", [this](map<string, any> args) {
+        
+        if(!args.count("room_id")){
+            printcb(RED, "Missing 'room_id' in args.\n");
+            return;
+        }
+        
 
+        std::string room_id = any_cast<string>(args["room_id"]);
+        std::string cid = any_cast<string>(args["cid"]);
+        int client_socket = clients[cid];
+        
+        if(rooms.find(stoi(room_id)) == rooms.end()){
+            printcb(RED, "Room with ID %s not found.\n", room_id.c_str());
+            return;
+        }
+
+     } );
+    addRoute("leave", [this](map<string, any> args) {
+        if(!args.count("room_id")){
+            printcb(RED, "Missing 'room_id' in args.\n");
+            return;
+        }
+
+        std::string room_id = any_cast<string>(args["room_id"]);
+        std::string cid = any_cast<string>(args["cid"]);
+        
+        if(rooms.find(stoi(room_id)) == rooms.end()){
+            printcb(RED, "Room with ID %s not found.\n", room_id.c_str());
+            return;
+        }
+
+        if(!rooms[stoi(room_id)].clientLeave(cid)){
+            printcb(RED, "Client %s not found in room %s.\n", cid.c_str(), room_id.c_str());
+            return;
+        }
+    } );
 }
 
 string SockumServer::getClientBySocketID(int sid)

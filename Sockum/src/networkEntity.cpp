@@ -48,3 +48,21 @@ bool SockumNetworkEntity::recv_all(int socket, char* buffer, size_t& size) {
 }
 
 
+bool SockumNetworkEntity::addRoom(int room_id, const string& room_name)
+{
+    if (rooms.find(room_id) != rooms.end()) {
+        printcb(RED, "Room with ID %d already exists.\n", room_id);
+        return;
+    }
+    
+    rooms[room_id] = Room(room_name);
+    return true;
+}
+
+
+void SockumNetworkEntity::addRoom(const string& room_name)
+{
+    static int room_id = 0;
+    rooms[room_id] = Room(room_name);
+    room_id++;
+}
