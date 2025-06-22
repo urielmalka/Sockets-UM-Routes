@@ -61,6 +61,9 @@ class SockumClient : public SockumNetworkEntity
         SockumClient* routeFile(string route, string path);
 
         void disconnect() { close(serverSocket); };
+
+        bool join();
+        bool leave();
 };
 
 #endif

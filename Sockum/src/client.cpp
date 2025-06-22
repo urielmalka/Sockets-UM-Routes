@@ -238,5 +238,6 @@ void SockumClient::setClientId(map<string, any>& args)
 
 void SockumClient::coreRoutes()
 {   
-    addRoute("/setId", [this](map<string, any> args) {setClientId(args); } );
+    addRoute("setId", [this](map<string, any> args) {setClientId(args); } );
+    addRoute("room", [this](map<string, any> args) {} )
 }
