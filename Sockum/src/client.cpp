@@ -120,12 +120,14 @@ void SockumClient::listenerRoutes()
 
 SockumClient* SockumClient::addRoute(string route, function<void(map<string, any>)> funcRoute)
 {
+    printci(BLUE,"Route Added: %s\n",route.c_str());
     routes[route] = funcRoute;
     return this;
 }
 
 SockumClient* SockumClient::addFileRoute(string route, const string path)
 {
+    printci(BLUE,"File Route Added: %s\n",route.c_str());
     routes[route] = [this, path](map<string, any> args) { routeFileProcess(args, path); };;
     return this;
 }
@@ -139,6 +141,8 @@ SockumClient* SockumClient::addRoute(string route, function<void(T, map<string, 
 
 SockumClient* SockumClient::route(string route, map<string, any>& args)
 {
+    while (!clientReady);
+    
     string buffer = route + "@" + serialize_map(args);
 
     int msgID = generateMessageID();
@@ -156,6 +160,7 @@ SockumClient* SockumClient::route(string route, map<string, any>& args)
 
 SockumClient* SockumClient::routeFile(string route, string path)
 {
+    while (!clientReady);
     fs::path filePath(path);
     string filename = filePath.filename().string();
 
@@ -238,15 +243,19 @@ void SockumClient::setClientId(map<string, any>& args)
 
 void SockumClient::coreRoutes()
 {   
-    addRoute("setId", [this](map<string, any> args) {setClientId(args); } );
+    addRoute("setId", [this](map<string, any> args) {
+        setClientId(args); 
+        clientReady = true;
+    });
+
     addRoute("createRoom", [this](map<string, any> args) {
         
         std::string room_id = any_cast<string>(args["room_id"]);
         std::string room_name = any_cast<string>(args["room_name"]);
 
-        join(stoi(room_id));
+        join(stoi(room_id), room_name);
 
-    }; )
+    } );
 }
 
 bool SockumClient::createRoom(std::string room_name)
@@ -254,6 +263,7 @@ bool SockumClient::createRoom(std::string room_name)
     map<string, any> args;
     args["room_name"] = room_name;
     route("createRoom", args);
+    return true;
 }
 
 
@@ -266,6 +276,7 @@ bool SockumClient::join(int room_id, std::string room_name)
     if(addRoom(room_id, room_name)){
         printcb(GREEN, "Join to %s\n",room_name.c_str());
     }
+    return true;
 }
 
 bool SockumClient::leave(int room_id)
@@ -273,5 +284,9 @@ bool SockumClient::leave(int room_id)
     map<string, any> args;
     args["room_id"] = room_id;
     route("leave", args);
-    removeRoom(room_id);
+
+    if(removeRoom(room_id)){
+        printcb(YELLOW, "Leave from %s\n",room_name.c_str());
+    }
+    return true;
 }

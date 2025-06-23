@@ -14,6 +14,7 @@ SockumServer::SockumServer(int PORT)
     server_port = PORT;
     max_connection = 128;
     initServer();
+    coreRoutes();
 }
 
 SockumServer::SockumServer(int PORT, int max_conn)
@@ -23,6 +24,7 @@ SockumServer::SockumServer(int PORT, int max_conn)
     server_port = PORT;
     max_connection = max_conn;
     initServer();
+    coreRoutes();
 }
 
 SockumServer::~SockumServer()
@@ -144,7 +146,7 @@ void SockumServer::listenerRoutes(int client_id)
             };
 
             pack["cid"] = getClientBySocketID(client_id);
-            logGet(pack);
+            logGet(pack, route);
             try{
                 auto func = routes.at(route);
                 func(pack);
@@ -170,6 +172,7 @@ void SockumServer::listenerRoutes(int client_id)
 
 SockumServer* SockumServer::addRoute(string route, function<void(map<string, any>&)> funcRoute)
 {
+    printci(BLUE,"Route Added: %s\n",route.c_str());
     routes[route] = funcRoute;
     return this;
 }
@@ -331,7 +334,7 @@ void SockumServer::coreRoutes()
         response["room_name"] = room_name;
 
         sendMessageToClient("createRoom", cid, response);
-    };)
+    });
 }
 
 string SockumServer::getClientBySocketID(int sid)
@@ -345,11 +348,11 @@ string SockumServer::getClientBySocketID(int sid)
 }
 
 
-void SockumServer::logGet(map<string, any> &args)
+void SockumServer::logGet(map<string, any> &args, std::string route)
 {
     if(!logActivied) return;
 
-    printcu(YELLOW, "SERVER GET:");
+    printcu(YELLOW, "SERVER GET: %s",route.c_str());
     printc(YELLOW, "\n\t{\n\t\t");
     for(auto &pair : args)
     {

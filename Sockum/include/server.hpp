@@ -51,7 +51,7 @@ class SockumServer : public SockumNetworkEntity
 
         string getClientBySocketID(int sid);
 
-        void logGet(map<string, any> &args);
+        void logGet(map<string, any> &args, std::string route);
         void logSend(map<string, any> &args);
 
     public:

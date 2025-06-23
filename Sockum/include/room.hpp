@@ -16,6 +16,7 @@ class Room
         std::string room_name;
 
     public:
+        Room() = default;
         Room(const std::string &room_name);
         ~Room();
 

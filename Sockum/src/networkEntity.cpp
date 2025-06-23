@@ -52,7 +52,7 @@ bool SockumNetworkEntity::addRoom(int room_id, const string& room_name)
 {
     if (rooms.find(room_id) != rooms.end()) {
         printcb(RED, "Room with ID %d already exists.\n", room_id);
-        return;
+        return false;
     }
     
     rooms[room_id] = Room(room_name);

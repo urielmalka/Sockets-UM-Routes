@@ -42,6 +42,8 @@ class SockumClient : public SockumNetworkEntity
 
         void routeFileProcess(map<string,any>& args, const string &save_path);
 
+        bool clientReady = false;
+
     public:
         SockumClient();
         SockumClient(int PORT);
@@ -62,7 +64,8 @@ class SockumClient : public SockumNetworkEntity
 
         void disconnect() { close(serverSocket); };
 
-        bool join(int room_id);
+        bool createRoom(std::string room_name);
+        bool join(int room_id, std::string room_name);
         bool leave(int room_id);
 };
 
