@@ -82,7 +82,8 @@ class SockumNetworkEntity{
         void setCrypto(function<string( const string&)> d, function<string( const string&)> e);
 
         bool addRoom(int room_id, const string& room_name);
-        void addRoom(const string& room_name);
+        bool removeRoom(int room_id);
+        int addRoom(const string& room_name);
         
 
 };

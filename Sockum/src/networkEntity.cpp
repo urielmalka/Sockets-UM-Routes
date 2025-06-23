@@ -60,9 +60,24 @@ bool SockumNetworkEntity::addRoom(int room_id, const string& room_name)
 }
 
 
-void SockumNetworkEntity::addRoom(const string& room_name)
+int SockumNetworkEntity::addRoom(const string& room_name)
 {
     static int room_id = 0;
     rooms[room_id] = Room(room_name);
     room_id++;
+    return room_id - 1; // return the ID of the last room that we create right now
+}
+
+
+bool SockumNetworkEntity::removeRoom(int room_id)
+{
+    auto it = rooms.find(room_id);
+    if (it == rooms.end()) {
+        printcb(RED, "Room with ID %d does not exist.\n", room_id);
+        return false;
+    }
+
+    rooms.erase(it);
+    printcb(GREEN, "Room with ID %d removed successfully.\n", room_id);
+    return true;
 }

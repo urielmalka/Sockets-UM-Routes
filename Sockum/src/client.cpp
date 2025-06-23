@@ -239,5 +239,39 @@ void SockumClient::setClientId(map<string, any>& args)
 void SockumClient::coreRoutes()
 {   
     addRoute("setId", [this](map<string, any> args) {setClientId(args); } );
-    addRoute("room", [this](map<string, any> args) {} )
+    addRoute("createRoom", [this](map<string, any> args) {
+        
+        std::string room_id = any_cast<string>(args["room_id"]);
+        std::string room_name = any_cast<string>(args["room_name"]);
+
+        join(stoi(room_id));
+
+    }; )
+}
+
+bool SockumClient::createRoom(std::string room_name)
+{
+    map<string, any> args;
+    args["room_name"] = room_name;
+    route("createRoom", args);
+}
+
+
+bool SockumClient::join(int room_id, std::string room_name)
+{
+    map<string, any> args;
+    args["room_id"] = room_id;
+    route("join", args);
+
+    if(addRoom(room_id, room_name)){
+        printcb(GREEN, "Join to %s\n",room_name.c_str());
+    }
+}
+
+bool SockumClient::leave(int room_id)
+{
+    map<string, any> args;
+    args["room_id"] = room_id;
+    route("leave", args);
+    removeRoom(room_id);
 }

@@ -88,7 +88,7 @@ void SockumServer::run()
         map<string, any> response;
 
         response["cid"] = tempId;
-        route("/setId", response,new_socket);
+        route("setId", response,new_socket);
 
         thread thread_client([this, new_socket](){
             listenerRoutes(new_socket);
@@ -311,6 +311,27 @@ void SockumServer::coreRoutes()
             return;
         }
     } );
+
+    addRoute("createRoom", [this](map<string, any> args) {
+        
+        if(!args.count("room_name")){
+            printcb(RED, "Missing 'room_name' in args.\n");
+            return;
+        }
+        std::string room_name = any_cast<string>(args["room_name"]);
+        std::string cid = any_cast<string>(args["cid"]);
+
+        int room_id = addRoom(room_name); // Create new room
+
+        rooms[room_id].clientJoin(cid, clients[cid]); // add the owner to the room
+
+        map<string, any> response; 
+
+        response["room_id"] = room_id;
+        response["room_name"] = room_name;
+
+        sendMessageToClient("createRoom", cid, response);
+    };)
 }
 
 string SockumServer::getClientBySocketID(int sid)

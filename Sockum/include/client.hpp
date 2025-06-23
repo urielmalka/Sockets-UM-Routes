@@ -62,8 +62,8 @@ class SockumClient : public SockumNetworkEntity
 
         void disconnect() { close(serverSocket); };
 
-        bool join();
-        bool leave();
+        bool join(int room_id);
+        bool leave(int room_id);
 };
 
 #endif
