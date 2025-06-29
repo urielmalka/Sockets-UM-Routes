@@ -35,7 +35,7 @@ This will generate all necessary executables.
 
 ## 🚀 Running the Example Applications
 
-1. return to main project folder to complie the test files:
+1. Return to the main project directory, enter the examples folder, and select the desired example:
 
 ```bash
 make
@@ -44,20 +44,16 @@ make
 2. In the first terminal, start the server:
 
 ```bash
-./test_server
+./server
 ```
 
 3. In a second terminal, run the first client:
 
 ```bash
-./test_client1
+./client
 ```
 
-4. In a third terminal, run the second client:
-
-```bash
-./test_client2
-```
+💡 Note: Some examples support multiple clients.
 
 Each client will connect to the server, send messages, and receive route-based responses.
 
