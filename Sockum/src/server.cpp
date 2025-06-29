@@ -322,9 +322,26 @@ void SockumServer::coreRoutes()
             return;
         }
         std::string room_name = any_cast<string>(args["room_name"]);
+        int unique_id = stoi(any_cast<string>(args["unique_id"]));
         std::string cid = any_cast<string>(args["cid"]);
 
-        int room_id = addRoom(room_name); // Create new room
+        int room_id;
+        if(unique_id > -1){
+            if(!addRoom(unique_id,room_name)){
+                printcb(RED, "Error creating new room with unique_id %d.\n", unique_id);
+                map<string, any> error_response; 
+                error_response["error"] = "Error creating new room with unique_id " + to_string(unique_id);
+                error_response["cid"] = cid;
+                // send error response to client
+                sendMessageToClient("createRoom", cid, error_response);
+                return;
+            }; // Error creating new room
+            room_id = unique_id;
+        }else{
+            room_id = addRoom(room_name); // Create new room
+        }
+
+        
 
         rooms[room_id].clientJoin(cid, clients[cid]); // add the owner to the room
 

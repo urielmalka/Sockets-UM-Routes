@@ -64,9 +64,9 @@ class SockumClient : public SockumNetworkEntity
 
         void disconnect() { close(serverSocket); };
 
-        bool createRoom(std::string room_name);
-        bool join(int room_id, std::string room_name);
-        bool leave(int room_id);
+        bool createRoom(std::string room_name,  int unique_id = -1);
+        bool join(int room_id, std::string room_name = "");
+        bool leave(int room_id,  std::string room_name = "");
 };
 
 #endif

@@ -250,6 +250,11 @@ void SockumClient::coreRoutes()
 
     addRoute("createRoom", [this](map<string, any> args) {
         
+        if(args.count("error")){
+            printcb(RED, "Error creating room: %s\n", any_cast<string>(args["error"]).c_str());
+            return;
+        }
+
         std::string room_id = any_cast<string>(args["room_id"]);
         std::string room_name = any_cast<string>(args["room_name"]);
 
@@ -258,10 +263,11 @@ void SockumClient::coreRoutes()
     } );
 }
 
-bool SockumClient::createRoom(std::string room_name)
+bool SockumClient::createRoom(std::string room_name, int unique_id)
 {
     map<string, any> args;
     args["room_name"] = room_name;
+    args["unique_id"] = unique_id;
     route("createRoom", args);
     return true;
 }
@@ -273,19 +279,19 @@ bool SockumClient::join(int room_id, std::string room_name)
     args["room_id"] = room_id;
     route("join", args);
 
-    if(addRoom(room_id, room_name)){
+    if(addRoom(room_id, room_name) && room_name.length() > 0){
         printcb(GREEN, "Join to %s\n",room_name.c_str());
     }
     return true;
 }
 
-bool SockumClient::leave(int room_id)
+bool SockumClient::leave(int room_id, std::string room_name)
 {
     map<string, any> args;
     args["room_id"] = room_id;
     route("leave", args);
 
-    if(removeRoom(room_id)){
+    if(removeRoom(room_id) && room_name.length() > 0){
         printcb(YELLOW, "Leave from %s\n",room_name.c_str());
     }
     return true;
