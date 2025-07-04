@@ -1,13 +1,28 @@
 
-
 # 🧦 Sockum
 
-**Sockum** is a lightweight, modular C++ framework for TCP-based client-server communication. It enables easy construction of networked applications by supporting:
+**Sockum** is a lightweight, modular C++ framework for building efficient TCP-based client-server applications.  
+It provides a clean and extensible foundation for creating scalable networked systems with minimal overhead.
 
-- 🔁 Multiple simultaneous clients
-- 🔧 Custom route-based request handling
-- 📦 Simple serialization for structured data exchange
-- 🧩 Modular architecture for extensibility
+## ✨ Features
+
+- 🔁 **Multi-Client Support**  
+  Handle multiple simultaneous TCP client connections with built-in thread-safe management.
+
+- 🔧 **Route-Based Request Handling**  
+  Easily define routes (like REST endpoints) and bind them to specific handlers for organized and modular logic.
+
+- 📦 **Simple Serialization**  
+  Built-in helpers for serializing and deserializing structured data for smooth communication between clients and server.
+
+- 🧩 **Modular & Extensible Architecture**  
+  Designed to be easily extended — plug in custom features without modifying the core framework.
+
+- 📁 **File Transfer Support**  
+  Send and receive files over the network with simple APIs for file streaming and chunk handling.
+
+- 🏠 **Room-Based Communication**  
+  Create and manage logical "rooms" for group communication — ideal for chat applications, multiplayer games, and collaborative environments.
 
 ---
 
