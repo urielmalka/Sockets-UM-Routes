@@ -120,7 +120,11 @@ void SockumClient::listenerRoutes()
 
 SockumClient* SockumClient::addRoute(string route, function<void(map<string, any>)> funcRoute)
 {
-    printci(BLUE,"Route Added: %s\n",route.c_str());
+    if (routes.find(route) != routes.end()) {
+        printci(RED, "Warning: Route already exists. Replacing route: %s\n", route.c_str());
+    } else {
+        printci(BLUE, "Route Added: %s\n", route.c_str());
+    }
     routes[route] = funcRoute;
     return this;
 }
@@ -135,6 +139,11 @@ SockumClient* SockumClient::addFileRoute(string route, const string path)
 template <typename T>
 SockumClient* SockumClient::addRoute(string route, function<void(T, map<string, any>)> funcRoute)
 {
+    if (routes.find(route) != routes.end()) {
+        printci(RED, "Warning: Route already exists. Replacing route: %s\n", route.c_str());
+    } else {
+        printci(BLUE, "Route Added: %s\n", route.c_str());
+    }
     routes[route] = funcRoute;
     return this;
 }
