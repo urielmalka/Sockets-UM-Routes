@@ -54,7 +54,7 @@ class SockumClient : public SockumNetworkEntity
         void run();
 
         SockumClient* addRoute(string route, function<void(map<string, any>)> funcRoute);
-        SockumClient* addFileRoute(string route,const string path = "");
+        SockumClient* addFileRoute(string route,const string path = "", function<void(map<string, any>)> funcRoute = nullptr);
 
         template <typename T>
         SockumClient* addRoute(string route, function<void(T, map<string, any>)> funcRoute);

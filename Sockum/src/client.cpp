@@ -129,10 +129,15 @@ SockumClient* SockumClient::addRoute(string route, function<void(map<string, any
     return this;
 }
 
-SockumClient* SockumClient::addFileRoute(string route, const string path)
+SockumClient* SockumClient::addFileRoute(string route, const string path, function<void(map<string, any>)> funcRoute)
 {
     printci(BLUE,"File Route Added: %s\n",route.c_str());
-    routes[route] = [this, path](map<string, any> args) { routeFileProcess(args, path); };;
+    routes[route] = [this, path, funcRoute](map<string, any> args) {
+            routeFileProcess(args, path); 
+            if (funcRoute) {
+                funcRoute(args);
+            }
+        };
     return this;
 }
 
@@ -207,7 +212,15 @@ SockumClient* SockumClient::routeFile(string route, string path)
 void SockumClient::routeFileProcess(map<string,any>& args, const string &save_path)
 {
     string filename;
-    if(save_path.length() > 0){
+    if(!save_path.empty()){
+        std::error_code ec;
+        if (!fs::exists(save_path)) {
+            fs::create_directories(save_path, ec);
+            if (ec) {
+                std::cerr << "⚠️ Failed to create directory: " << save_path << " (" << ec.message() << ")\n";
+                return;
+            }
+        }
         filename = save_path + "/";
     }
     filename += any_cast<string>(args["filename"]);
