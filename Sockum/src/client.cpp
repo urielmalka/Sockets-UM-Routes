@@ -3,19 +3,14 @@
 #include <thread>   
 #include <chrono> 
 #include <filesystem>
+#include <arpa/inet.h> 
 #include <regex>
 
-SockumClient::SockumClient()
-{
-    server_port = 8080;
-    initClient();
-}
-
-SockumClient::SockumClient(int PORT)
+SockumClient::SockumClient(std::string server_ip, int PORT)
 {
     if(PORT < 1) throw runtime_error("PORT must be greater than zero.");
     server_port = PORT;
-    initClient();
+    initClient(server_ip);
 }
 
 SockumClient::~SockumClient()
@@ -23,12 +18,18 @@ SockumClient::~SockumClient()
     close(serverSocket);
 }
 
-void SockumClient::initClient()
+void SockumClient::initClient(std::string server_ip)
 {
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(server_port);
-    serverAddress.sin_addr.s_addr = INADDR_ANY;
+
+    if(server_ip.empty()) {
+        serverAddress.sin_addr.s_addr = INADDR_ANY;
+    }else{
+        serverAddress.sin_addr.s_addr = inet_addr(server_ip.c_str());
+    }
+    
 
     connectClient();
     coreRoutes();

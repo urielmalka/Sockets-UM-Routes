@@ -33,7 +33,7 @@ class SockumClient : public SockumNetworkEntity
 
         map<string, function<void(map<string, any>)>> routes;
 
-        void initClient();
+        void initClient(std::string server_ip);
         void connectClient();
         void coreRoutes();
         void setClientId(map<string,any>& args);
@@ -45,8 +45,7 @@ class SockumClient : public SockumNetworkEntity
         bool clientReady = false;
 
     public:
-        SockumClient();
-        SockumClient(int PORT);
+        SockumClient(std::string server_ip = "", int PORT = 8080);
         ~SockumClient();
 
         string getClientID(){ return client_id; }
