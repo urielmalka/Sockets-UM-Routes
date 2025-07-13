@@ -21,6 +21,7 @@
 
 #include "networkEntity.hpp"
 #include "utils/serialize.hpp"
+#include "utils/crypto.hpp"
 
 using namespace std;
 
@@ -43,6 +44,8 @@ class SockumClient : public SockumNetworkEntity
         void routeFileProcess(map<string,any>& args, const string &save_path);
 
         bool clientReady = false;
+
+        CryptoPack* crypto_pack = nullptr;
 
     public:
         SockumClient(std::string server_ip = "", int PORT = 8080);

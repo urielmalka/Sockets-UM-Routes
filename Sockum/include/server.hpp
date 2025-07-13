@@ -35,8 +35,6 @@ class SockumServer : public SockumNetworkEntity
 
         int max_connection;
 
-        bool logActivied = true;
-
         map<string, function<void(map<string, any>&)> > routes;
         map<string, function<void(SockumServer, map<string, any>&)> > serverRoutes;
         map<string, int> clients;
@@ -50,9 +48,6 @@ class SockumServer : public SockumNetworkEntity
         /*End of Core Functions Routes */
 
         string getClientBySocketID(int sid);
-
-        void logGet(map<string, any> &args, std::string route);
-        void logSend(map<string, any> &args);
 
     public:
         SockumServer();

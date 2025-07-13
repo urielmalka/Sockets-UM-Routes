@@ -15,6 +15,7 @@ SockumClient::SockumClient(std::string server_ip, int PORT)
 
 SockumClient::~SockumClient()
 {
+    delete crypto_pack;
     close(serverSocket);
 }
 
@@ -29,10 +30,13 @@ void SockumClient::initClient(std::string server_ip)
     }else{
         serverAddress.sin_addr.s_addr = inet_addr(server_ip.c_str());
     }
-    
+
+    crypto_pack = new CryptoPack();
 
     connectClient();
     coreRoutes();
+
+
     
 }
 
@@ -43,6 +47,18 @@ void SockumClient::connectClient()
     {
         is_connected = connect(serverSocket, (struct sockaddr*)&serverAddress,sizeof(serverAddress));
         if(is_connected == 0 ) {
+            send(serverSocket, crypto_pack->get_x3dh_keys().identity_pub.data(), 32, 0);
+            send(serverSocket, crypto_pack->get_x3dh_keys().signed_prekey_pub.data(), 32, 0);
+            send(serverSocket, crypto_pack->get_x3dh_keys().one_time_pub.data(), 32, 0);
+
+            std::unique_ptr<X3DHKeys> x3dh_keys = std::make_unique<X3DHKeys>();
+
+            recv(serverSocket, x3dh_keys->identity_pub.data(), crypto_kx_PUBLICKEYBYTES, MSG_WAITALL);
+            recv(serverSocket, x3dh_keys->signed_prekey_pub.data(), crypto_kx_PUBLICKEYBYTES, MSG_WAITALL);
+            recv(serverSocket, x3dh_keys->one_time_pub.data(), crypto_kx_PUBLICKEYBYTES, MSG_WAITALL);
+
+            crypto_pack->set_shared_secret(*x3dh_keys);
+
             mangePack->add_cid("local");
             printc(GREEN,"Client connect to port %d.\n",server_port);
             break;
@@ -64,19 +80,20 @@ void SockumClient::listenerRoutes()
 
     while (1)
     {
-        char buffer[MAX_CHUNK_SIZE] = {0};
-        size_t actual_size = MAX_CHUNK_SIZE;
+        char buffer[MAX_CHUNK_SIZE * 2] = {0};
+        size_t actual_size = MAX_CHUNK_SIZE * 2;
 
         if (!recv_all(serverSocket,buffer, actual_size)) break;
 
         string strBuffer(buffer,actual_size);
 
-        /*if(isCryptp){
-            string de_buffer = decrypt(buffer);
-            strncpy(buffer,de_buffer.c_str(),BUFFER_SIZE - 1);
-        }*/
+        if(logActivated) printc(BLUE, "Received message ID: %d, Buffer: %s [SIZE: %zu]\n", message_id, strBuffer.substr(0, 50).c_str(), strBuffer.size());
 
-        if(!mangePack->manegePack("local",strBuffer,message_id)) continue;
+        string decrypted = crypto_pack->get_receive_ratchet().decrypt(from_hex(strBuffer));
+
+        if(logActivated) printc(BLUE, "Decrypted message: %s [SIZE: %zu]\n", decrypted.substr(0, 50).c_str(), decrypted.size());
+
+        if(!mangePack->manegePack("local",decrypted,message_id)) continue;
 
         string packBuffer = mangePack->getPack("local",message_id);
 
@@ -165,9 +182,10 @@ SockumClient* SockumClient::route(string route, map<string, any>& args)
     vector<string> packs = mangePack->chunk_string_for_network(buffer,msgID);
 
     for(const string &p : packs){
-        uint32_t len = htonl(p.size());
+        string buffer_encrypted = to_hex(crypto_pack->get_send_ratchet().encrypt(p));
+        uint32_t len = htonl(buffer_encrypted.size());
         send(serverSocket, &len, sizeof(len), 0);
-        send(serverSocket, p.c_str(), p.size(), 0);
+        send(serverSocket, buffer_encrypted.c_str(), buffer_encrypted.size(), 0);
     }
 
     return this;
@@ -200,9 +218,13 @@ SockumClient* SockumClient::routeFile(string route, string path)
         vector<string> packs = mangePack->chunk_string_for_network(buffer,msgID);
 
         for(const string &p : packs){
-            uint32_t len = htonl(p.size());
+
+            string buffer_encrypted = to_hex(crypto_pack->get_send_ratchet().encrypt(p));
+
+            uint32_t len = htonl(buffer_encrypted.size());
+
             send(serverSocket, &len, sizeof(len), 0);
-            send(serverSocket, p.c_str(), p.size(), 0);
+            send(serverSocket, buffer_encrypted.c_str(), buffer_encrypted.size(), 0);
         }
 
     }
@@ -266,6 +288,10 @@ void SockumClient::setClientId(map<string, any>& args)
 
 void SockumClient::coreRoutes()
 {   
+    addRoute("setCrypto", [this](map<string, any> args) {
+        
+    });
+
     addRoute("setId", [this](map<string, any> args) {
         setClientId(args); 
         clientReady = true;

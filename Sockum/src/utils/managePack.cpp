@@ -93,3 +93,18 @@ bool ManagePack::remove_cid(const string& cid)
     if(remove > 0) return true;
     else return false;
 };
+
+
+void ManagePack::add_crypto_pack(const string& cid)
+{
+    if(!crypto_packs.count(cid))
+    {
+        CryptoPack crypto_pack(true);
+        crypto_packs[cid] = crypto_pack;
+    }
+}
+
+void ManagePack::set_shared_secret(const string& cid, const X3DHKeys& keys)
+{
+    crypto_packs[cid].set_shared_secret(keys);
+}

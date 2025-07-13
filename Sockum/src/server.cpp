@@ -82,7 +82,25 @@ void SockumServer::run()
         {
             tempId = generateClientId();
         }
-        
+
+        X3DHKeys* x3dh_keys = new X3DHKeys();
+        x3dh_keys->generate();
+
+        mangePack->add_crypto_pack(tempId);
+        X3DHKeys& server_keys = mangePack->get_crypto_pack(tempId).get_x3dh_keys();
+
+        send(new_socket, server_keys.identity_pub.data(), crypto_kx_PUBLICKEYBYTES, 0);
+        send(new_socket, server_keys.signed_prekey_pub.data(), crypto_kx_PUBLICKEYBYTES, 0);
+        send(new_socket, server_keys.one_time_pub.data(), crypto_kx_PUBLICKEYBYTES, 0);
+
+        recv(new_socket, x3dh_keys->identity_pub.data(), crypto_kx_PUBLICKEYBYTES, MSG_WAITALL);
+        recv(new_socket, x3dh_keys->signed_prekey_pub.data(), crypto_kx_PUBLICKEYBYTES, MSG_WAITALL);
+        recv(new_socket, x3dh_keys->one_time_pub.data(), crypto_kx_PUBLICKEYBYTES, MSG_WAITALL);
+
+        mangePack->set_shared_secret(tempId, *x3dh_keys);
+
+        delete x3dh_keys; // Clean up after receiving keys
+
         clients[tempId] = new_socket;
 
         mangePack->add_cid(tempId);
@@ -112,15 +130,21 @@ void SockumServer::listenerRoutes(int client_id)
 
     while (1)
     {
-        char buffer[MAX_CHUNK_SIZE]= {0};
-        size_t actual_size = MAX_CHUNK_SIZE;
+        char buffer[MAX_CHUNK_SIZE * 2]= {0};
+        size_t actual_size = MAX_CHUNK_SIZE * 2;
 
         if (!recv_all(client_id,buffer, actual_size)) break;
 
         string strBuffer(buffer,actual_size);
 
-        // need to optimaze
-        if(!mangePack->manegePack(getClientBySocketID(client_id),strBuffer,message_id)) continue;
+        if(logActivated) printc(BLUE, "Received message ID: %d, Buffer: %s\n", message_id, strBuffer.substr(0, 50).c_str());
+
+        string decrypted = mangePack->get_crypto_pack(getClientBySocketID(client_id)).get_receive_ratchet().decrypt(from_hex(strBuffer));
+
+        if(logActivated) printc(BLUE, "Received message ID: %d, Buffer: %s\n", message_id, decrypted.substr(0, 50).c_str());
+
+        // need to optimize
+        if(!mangePack->manegePack(getClientBySocketID(client_id),decrypted,message_id)) continue;
 
         string packBuffer = mangePack->getPack(getClientBySocketID(client_id),message_id);
         
@@ -203,9 +227,10 @@ SockumServer* SockumServer::route(string route, map<string, any>& args, int clie
     int msgID = generateMessageID();
     vector<string> packs = mangePack->chunk_string_for_network(buffer,msgID);
     for(const string &p : packs){
-        uint32_t len = htonl(p.size());
+        string buffer_encrypted = to_hex(mangePack->get_crypto_pack(getClientBySocketID(client_id)).get_send_ratchet().encrypt(p));
+        uint32_t len = htonl(buffer_encrypted.size());
         send(client_id, &len, sizeof(len), 0);
-        send(client_id, p.c_str(), p.size(), MSG_NOSIGNAL);
+        send(client_id, buffer_encrypted.c_str(), buffer_encrypted.size(), MSG_NOSIGNAL);
     }
     
     return this;
@@ -220,9 +245,10 @@ SockumServer* SockumServer::sendMessageToClient(string route ,string cid ,map<st
     vector<string> packs = mangePack->chunk_string_for_network(buffer,msgID);
 
     for(const string &p : packs){
-        uint32_t len = htonl(p.size());
+        string buffer_encrypted = to_hex(mangePack->get_crypto_pack(getClientBySocketID(client_id)).get_send_ratchet().encrypt(p));
+        uint32_t len = htonl(buffer_encrypted.size());
         send(client_id, &len, sizeof(len), 0);
-        send(client_id, p.c_str(), p.size(), 0);
+        send(client_id, buffer_encrypted.c_str(), buffer_encrypted.size(), 0);
     }
 
     return this;
@@ -235,11 +261,12 @@ SockumServer* SockumServer::sendMessageToClientList(string route ,list<string> c
     int client_id;
 
     for(const string &p : packs){
-        uint32_t len = htonl(p.size());
+        string buffer_encrypted = to_hex(mangePack->get_crypto_pack(getClientBySocketID(client_id)).get_send_ratchet().encrypt(p));
+        uint32_t len = htonl(buffer_encrypted.size());
         for(string &cid : cids){
             client_id = clients[cid];
             send(client_id, &len, sizeof(len), 0);
-            send(client_id, p.c_str(), p.size(), 0);
+            send(client_id, buffer_encrypted.c_str(), buffer_encrypted.size(), 0);
         }
     }
 
@@ -267,9 +294,10 @@ SockumServer* SockumServer::sendMessageToAll(string route ,map<string, any> &arg
         if(!include_sender && client.first == any_cast<string>(args["cid"])) continue;
 
         for(const string &p : packs){
-            uint32_t len = htonl(p.size());
+            string buffer_encrypted = to_hex(mangePack->get_crypto_pack(getClientBySocketID(client.second)).get_send_ratchet().encrypt(p));
+            uint32_t len = htonl(buffer_encrypted.size());
             send(client.second, &len, sizeof(len), 0);
-            ssize_t bytes_sent = send(client.second, p.c_str(), p.size(), MSG_NOSIGNAL);
+            ssize_t bytes_sent = send(client.second, buffer_encrypted.c_str(), buffer_encrypted.size(), MSG_NOSIGNAL);
             if(bytes_sent < 0)
                 printc(RED, "Send Faild\n");
         }
@@ -374,34 +402,6 @@ string SockumServer::getClientBySocketID(int sid)
 
     return CLIENT_NOT_FOUND;
 }
-
-
-void SockumServer::logGet(map<string, any> &args, std::string route)
-{
-    if(!logActivied) return;
-
-    printcu(YELLOW, "SERVER GET: %s",route.c_str());
-    printc(YELLOW, "\n\t{\n\t\t");
-    for(auto &pair : args)
-    {
-        printc(YELLOW, "\"%s\": \"%s\" \n\t\t",pair.first.substr(0,50).c_str(), any_cast<string>(pair.second).substr(0,50).c_str());
-    }
-    printc(YELLOW, "\b\b\b\b\b\b\b\b}\n");
-}
-
-void SockumServer::logSend(map<string, any> &args)
-{
-    if(!logActivied) return;
-
-    printcu(GREEN, "SERVER SEND:");
-    printc(GREEN, "\n\t{\n\t\t");
-    for(auto &pair : args)
-    {
-        printc(GREEN, "\"%s\": \"%s\" \n\t\t",pair.first.substr(0,50).c_str(), any_cast<string>(pair.second).substr(0,50).c_str());
-    }
-    printc(GREEN, "\b\b\b\b\b\b\b\b}\n");
-}
-
 
 /* This function generate id for the Class Client */
 string generateClientId()

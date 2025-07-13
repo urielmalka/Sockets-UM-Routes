@@ -54,7 +54,8 @@ class SockumNetworkEntity{
     protected:
         int serverSocket;
         int server_port;
-        bool isCryptp = false;
+
+        bool logActivated = false;
 
         map<int,Room> rooms;
 
@@ -62,28 +63,26 @@ class SockumNetworkEntity{
 
         ManagePack* mangePack;
 
-        function<string( const string&)> decrypt;
-        function<string( const string&)> encrypt;
-
-        void setDecrypt(function<string( const string&)> d) { decrypt = d; };
-        void setEncrypt(function<string( const string&)> e) { encrypt = e; };
-
         int generateMessageID() {
             std::lock_guard<std::mutex> lock(id_mutex);
             return currentMessageID++;
-        }
-    
+        }    
+
+        void logGet(map<string, any> &args, std::string route);
+        void logSend(map<string, any> &args);
 
     public:
         
         SockumNetworkEntity();
         ~SockumNetworkEntity();
 
-        void setCrypto(function<string( const string&)> d, function<string( const string&)> e);
-
         bool addRoom(int room_id, const string& room_name);
         int addRoom(const string& room_name);
         bool removeRoom(int room_id);
+
+        void setLogActivated(bool activated) {
+            logActivated = activated;
+        }
         
         
 

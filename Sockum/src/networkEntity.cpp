@@ -9,16 +9,6 @@ SockumNetworkEntity::SockumNetworkEntity()
 
 SockumNetworkEntity::~SockumNetworkEntity(){};
 
-void SockumNetworkEntity::setCrypto(function<string( const string&)> decrypt, function<string( const string&)> encrypt)
-{
-    setDecrypt(decrypt);
-    setEncrypt(encrypt);
-    isCryptp = true;
-}
-
-
-
-
 bool SockumNetworkEntity::recv_all(int socket, char* buffer, size_t& size) {
 
     uint32_t msg_len_network;
@@ -33,6 +23,8 @@ bool SockumNetworkEntity::recv_all(int socket, char* buffer, size_t& size) {
 
 
     if (msg_len > size) {
+        std::cerr << "Error: Message size exceeds buffer size.\n";
+        std::cerr << "Buffer size: " << size << ", Message size: " << msg_len << "\n";
         return false; // overflow 
     }
 
@@ -80,4 +72,31 @@ bool SockumNetworkEntity::removeRoom(int room_id)
     rooms.erase(it);
     printcb(GREEN, "Room with ID %d removed successfully.\n", room_id);
     return true;
+}
+
+
+void SockumNetworkEntity::logGet(map<string, any> &args, std::string route)
+{
+    if(!logActivated) return;
+
+    printcu(YELLOW, "GET: %s",route.c_str());
+    printc(YELLOW, "\n\t{\n\t\t");
+    for(auto &pair : args)
+    {
+        printc(YELLOW, "\"%s\": \"%s\" \n\t\t",pair.first.substr(0,50).c_str(), any_cast<string>(pair.second).substr(0,50).c_str());
+    }
+    printc(YELLOW, "\b\b\b\b\b\b\b\b}\n");
+}
+
+void SockumNetworkEntity::logSend(map<string, any> &args)
+{
+    if(!logActivated) return;
+
+    printcu(GREEN, "SEND:");
+    printc(GREEN, "\n\t{\n\t\t");
+    for(auto &pair : args)
+    {
+        printc(GREEN, "\"%s\": \"%s\" \n\t\t",pair.first.substr(0,50).c_str(), any_cast<string>(pair.second).substr(0,50).c_str());
+    }
+    printc(GREEN, "\b\b\b\b\b\b\b\b}\n");
 }
