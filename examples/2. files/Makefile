@@ -1,7 +1,7 @@
 # === Compiler and Flags ===
 CXX = g++
 CXXFLAGS = -std=c++17 -I ../../Sockum/include -I ../../Sockum/include/utils -I ../../Sockum/external/UColor_C/include
-LDFLAGS = -L ../../Sockum/build -lSockum
+LDFLAGS = -L ../../Sockum/build -lSockum -lsodium
 
 # === Source Files ===
 OBJ_SERVER = server.cpp

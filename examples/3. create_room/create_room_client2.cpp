@@ -12,8 +12,6 @@ int main()
 {
     SockumClient *c2 = new SockumClient();
 
-    
-
     thread t([c2]() { c2->run(); });
     t.detach();
     

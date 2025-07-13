@@ -6,6 +6,7 @@
 int main()
 {
     SockumClient *c2 = new SockumClient();
+    c2->setLogActivated(true); // Enable logging for debugging
 
     std::thread t([c2]() { c2->run(); });
     t.detach();
@@ -14,7 +15,7 @@ int main()
     std::string path = "YOUR_FILE_PATH";
 
     c2->routeFile("file", path);
-
+    
     std::cout << "Exiting...\n";
     c2->disconnect();
     delete c2;

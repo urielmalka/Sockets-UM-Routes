@@ -4,6 +4,7 @@
 int main()
 {
     SockumServer * server = new SockumServer();
+    server->setLogActivated(true); // Enable logging for debugging
 
     server->addRoute("hello_client", [](map<string, any>& args) {
         // Handle the request
