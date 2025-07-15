@@ -24,6 +24,16 @@ It provides a clean and extensible foundation for creating scalable networked sy
 - 🏠 **Room-Based Communication**  
   Create and manage logical "rooms" for group communication — ideal for chat applications, multiplayer games, and collaborative environments.
 
+- 🔐 **Secure Client-Server Communication**
+  
+  All communication between the server and each client is end-to-end encrypted using:
+
+  - Ed25519 for digital signatures and identity verification.
+
+  - X3DH (Extended Triple Diffie-Hellman) for secure session key agreement.
+
+  - Double Ratchet Algorithm for forward secrecy and protection against future key compromises.
+
 ---
 
 ## 📁 Project Structure
