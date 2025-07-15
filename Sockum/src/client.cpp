@@ -89,11 +89,18 @@ void SockumClient::listenerRoutes()
 
         if(logActivated) printc(BLUE, "Received message ID: %d, Buffer: %s [SIZE: %zu]\n", message_id, strBuffer.substr(0, 50).c_str(), strBuffer.size());
 
-        string decrypted = crypto_pack->get_receive_ratchet().decrypt(from_hex(strBuffer));
+        auto decrypted = crypto_pack->get_receive_ratchet().decrypt(from_hex(strBuffer));
+        SignedMessage signed_message_received = SignedMessage::deserialize(decrypted);
 
-        if(logActivated) printc(BLUE, "Decrypted message: %s [SIZE: %zu]\n", decrypted.substr(0, 50).c_str(), decrypted.size());
+        if(!verify_message(signed_message_received)) {
+            printc(RED, "Received message signature verification failed.\n");
+            pack.clear();
+            continue;
+        }
 
-        if(!mangePack->manegePack("local",decrypted,message_id)) continue;
+        if(logActivated) printc(BLUE, "Decrypted message: %s [SIZE: %zu]\n", signed_message_received.message.substr(0, 50).c_str(), signed_message_received.message.size());
+
+        if(!mangePack->manegePack("local",signed_message_received.message,message_id)) continue;
 
         string packBuffer = mangePack->getPack("local",message_id);
 
@@ -182,7 +189,9 @@ SockumClient* SockumClient::route(string route, map<string, any>& args)
     vector<string> packs = mangePack->chunk_string_for_network(buffer,msgID);
 
     for(const string &p : packs){
-        string buffer_encrypted = to_hex(crypto_pack->get_send_ratchet().encrypt(p));
+        SignedMessage signed_message = sign_message(p, crypto_pack->get_x3dh_keys());
+        auto signed_buffer = signed_message.serialize();
+        string buffer_encrypted = to_hex(crypto_pack->get_send_ratchet().encrypt(signed_buffer));
         uint32_t len = htonl(buffer_encrypted.size());
         send(serverSocket, &len, sizeof(len), 0);
         send(serverSocket, buffer_encrypted.c_str(), buffer_encrypted.size(), 0);
@@ -219,7 +228,9 @@ SockumClient* SockumClient::routeFile(string route, string path)
 
         for(const string &p : packs){
 
-            string buffer_encrypted = to_hex(crypto_pack->get_send_ratchet().encrypt(p));
+            SignedMessage signed_message = sign_message(p, crypto_pack->get_x3dh_keys());
+            auto signed_buffer = signed_message.serialize();
+            string buffer_encrypted = to_hex(crypto_pack->get_send_ratchet().encrypt(signed_buffer));
 
             uint32_t len = htonl(buffer_encrypted.size());
 
@@ -288,9 +299,6 @@ void SockumClient::setClientId(map<string, any>& args)
 
 void SockumClient::coreRoutes()
 {   
-    addRoute("setCrypto", [this](map<string, any> args) {
-        
-    });
 
     addRoute("setId", [this](map<string, any> args) {
         setClientId(args); 

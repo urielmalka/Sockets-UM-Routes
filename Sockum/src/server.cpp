@@ -139,12 +139,19 @@ void SockumServer::listenerRoutes(int client_id)
 
         if(logActivated) printc(BLUE, "Received message ID: %d, Buffer: %s\n", message_id, strBuffer.substr(0, 50).c_str());
 
-        string decrypted = mangePack->get_crypto_pack(getClientBySocketID(client_id)).get_receive_ratchet().decrypt(from_hex(strBuffer));
+        auto decrypted = mangePack->get_crypto_pack(getClientBySocketID(client_id)).get_receive_ratchet().decrypt(from_hex(strBuffer));
+        SignedMessage signed_message_received = SignedMessage::deserialize(decrypted);
 
-        if(logActivated) printc(BLUE, "Received message ID: %d, Buffer: %s\n", message_id, decrypted.substr(0, 50).c_str());
+        if(!verify_message(signed_message_received)) {
+            printc(RED, "Received message signature verification failed.\n");
+            pack.clear();
+            continue;
+        }
+
+        if(logActivated) printc(BLUE, "Received message ID: %d, Buffer: %s\n", message_id, signed_message_received.message.substr(0, 50).c_str());
 
         // need to optimize
-        if(!mangePack->manegePack(getClientBySocketID(client_id),decrypted,message_id)) continue;
+        if(!mangePack->manegePack(getClientBySocketID(client_id),signed_message_received.message,message_id)) continue;
 
         string packBuffer = mangePack->getPack(getClientBySocketID(client_id),message_id);
         
@@ -227,7 +234,11 @@ SockumServer* SockumServer::route(string route, map<string, any>& args, int clie
     int msgID = generateMessageID();
     vector<string> packs = mangePack->chunk_string_for_network(buffer,msgID);
     for(const string &p : packs){
-        string buffer_encrypted = to_hex(mangePack->get_crypto_pack(getClientBySocketID(client_id)).get_send_ratchet().encrypt(p));
+
+        SignedMessage signed_message = sign_message(p, mangePack->get_crypto_pack(getClientBySocketID(client_id)).get_x3dh_keys());
+        auto signed_buffer = signed_message.serialize();
+        string buffer_encrypted = to_hex(mangePack->get_crypto_pack(getClientBySocketID(client_id)).get_send_ratchet().encrypt(signed_buffer));
+
         uint32_t len = htonl(buffer_encrypted.size());
         send(client_id, &len, sizeof(len), 0);
         send(client_id, buffer_encrypted.c_str(), buffer_encrypted.size(), MSG_NOSIGNAL);
@@ -245,7 +256,11 @@ SockumServer* SockumServer::sendMessageToClient(string route ,string cid ,map<st
     vector<string> packs = mangePack->chunk_string_for_network(buffer,msgID);
 
     for(const string &p : packs){
-        string buffer_encrypted = to_hex(mangePack->get_crypto_pack(getClientBySocketID(client_id)).get_send_ratchet().encrypt(p));
+        
+        SignedMessage signed_message = sign_message(p, mangePack->get_crypto_pack(getClientBySocketID(client_id)).get_x3dh_keys());
+        auto signed_buffer = signed_message.serialize();
+        string buffer_encrypted = to_hex(mangePack->get_crypto_pack(getClientBySocketID(client_id)).get_send_ratchet().encrypt(signed_buffer));
+
         uint32_t len = htonl(buffer_encrypted.size());
         send(client_id, &len, sizeof(len), 0);
         send(client_id, buffer_encrypted.c_str(), buffer_encrypted.size(), 0);
@@ -261,7 +276,11 @@ SockumServer* SockumServer::sendMessageToClientList(string route ,list<string> c
     int client_id;
 
     for(const string &p : packs){
-        string buffer_encrypted = to_hex(mangePack->get_crypto_pack(getClientBySocketID(client_id)).get_send_ratchet().encrypt(p));
+        
+        SignedMessage signed_message = sign_message(p, mangePack->get_crypto_pack(getClientBySocketID(client_id)).get_x3dh_keys());
+        auto signed_buffer = signed_message.serialize();
+        string buffer_encrypted = to_hex(mangePack->get_crypto_pack(getClientBySocketID(client_id)).get_send_ratchet().encrypt(signed_buffer));
+
         uint32_t len = htonl(buffer_encrypted.size());
         for(string &cid : cids){
             client_id = clients[cid];
@@ -294,7 +313,11 @@ SockumServer* SockumServer::sendMessageToAll(string route ,map<string, any> &arg
         if(!include_sender && client.first == any_cast<string>(args["cid"])) continue;
 
         for(const string &p : packs){
-            string buffer_encrypted = to_hex(mangePack->get_crypto_pack(getClientBySocketID(client.second)).get_send_ratchet().encrypt(p));
+            
+            SignedMessage signed_message = sign_message(p, mangePack->get_crypto_pack(getClientBySocketID(client.second)).get_x3dh_keys());
+            auto signed_buffer = signed_message.serialize();
+            string buffer_encrypted = to_hex(mangePack->get_crypto_pack(getClientBySocketID(client.second)).get_send_ratchet().encrypt(signed_buffer));
+
             uint32_t len = htonl(buffer_encrypted.size());
             send(client.second, &len, sizeof(len), 0);
             ssize_t bytes_sent = send(client.second, buffer_encrypted.c_str(), buffer_encrypted.size(), MSG_NOSIGNAL);

@@ -70,7 +70,21 @@ std::vector<unsigned char> DoubleRatchet::encrypt(const std::string& plaintext) 
     return ciphertext;
 }
 
-std::string DoubleRatchet::decrypt(const std::vector<unsigned char>& ciphertext) {
+std::vector<unsigned char> DoubleRatchet::encrypt(const std::vector<unsigned char>& plaintext) {
+    std::array<unsigned char, crypto_secretbox_KEYBYTES> message_key;
+    kdf(chain_key, chain_key, message_key);
+
+    std::vector<unsigned char> nonce(crypto_secretbox_NONCEBYTES);
+    randombytes_buf(nonce.data(), nonce.size());
+
+    std::vector<unsigned char> ciphertext(plaintext.size() + crypto_secretbox_MACBYTES);
+    crypto_secretbox_easy(ciphertext.data(), plaintext.data(), plaintext.size(), nonce.data(), message_key.data());
+
+    ciphertext.insert(ciphertext.begin(), nonce.begin(), nonce.end());
+    return ciphertext;
+}
+
+std::vector<unsigned char> DoubleRatchet::decrypt(const std::vector<unsigned char>& ciphertext) {
     std::array<unsigned char, crypto_secretbox_KEYBYTES> message_key;
     kdf(chain_key, chain_key, message_key);
 
@@ -79,15 +93,17 @@ std::string DoubleRatchet::decrypt(const std::vector<unsigned char>& ciphertext)
 
     std::vector<unsigned char> decrypted(enc.size() - crypto_secretbox_MACBYTES);
     if (crypto_secretbox_open_easy(decrypted.data(), enc.data(), enc.size(), nonce.data(), message_key.data()) != 0) {
-        return "[Decryption Failed]";
+        return {}; // Return empty vector on failure
     }
-    return std::string(decrypted.begin(), decrypted.end());
+    return decrypted;
 }
+
 
 void X3DHKeys::generate() {
     crypto_kx_keypair(identity_pub.data(), identity_priv.data());
     crypto_kx_keypair(signed_prekey_pub.data(), signed_prekey_priv.data());
     crypto_kx_keypair(one_time_pub.data(), one_time_priv.data());
+    crypto_sign_keypair(sign_pub.data(), sign_priv.data());
 }
 
 void X3DH::generate_identity_key(X3DHKeys &keys) {
@@ -99,20 +115,20 @@ void X3DH::generate_prekeys(X3DHKeys &keys) {
     crypto_kx_keypair(keys.one_time_pub.data(), keys.one_time_priv.data());
 }
 
-void X3DH::derive_shared_secret_alice(
-    const X3DHKeys &alice_keys,
-    const std::array<unsigned char, crypto_kx_PUBLICKEYBYTES> &bob_identity_pub,
-    const std::array<unsigned char, crypto_kx_PUBLICKEYBYTES> &bob_signed_prekey_pub,
-    const std::array<unsigned char, crypto_kx_PUBLICKEYBYTES> &bob_one_time_pub,
+void X3DH::derive_shared_secret_client(
+    const X3DHKeys &client_keys,
+    const std::array<unsigned char, crypto_kx_PUBLICKEYBYTES> &server_identity_pub,
+    const std::array<unsigned char, crypto_kx_PUBLICKEYBYTES> &server_signed_prekey_pub,
+    const std::array<unsigned char, crypto_kx_PUBLICKEYBYTES> &server_one_time_pub,
     std::array<unsigned char, crypto_generichash_BYTES> &shared_secret
 ) {
     std::array<unsigned char, crypto_scalarmult_BYTES> dh1, dh2, dh3, dh4;
 
-    // Alice's perspective: DH calculations
-    crypto_scalarmult(dh1.data(), alice_keys.identity_priv.data(), bob_signed_prekey_pub.data());
-    crypto_scalarmult(dh2.data(), alice_keys.signed_prekey_priv.data(), bob_identity_pub.data());
-    crypto_scalarmult(dh3.data(), alice_keys.signed_prekey_priv.data(), bob_signed_prekey_pub.data());
-    crypto_scalarmult(dh4.data(), alice_keys.one_time_priv.data(), bob_signed_prekey_pub.data());
+    // Client's perspective: DH calculations
+    crypto_scalarmult(dh1.data(), client_keys.identity_priv.data(), server_signed_prekey_pub.data());
+    crypto_scalarmult(dh2.data(), client_keys.signed_prekey_priv.data(), server_identity_pub.data());
+    crypto_scalarmult(dh3.data(), client_keys.signed_prekey_priv.data(), server_signed_prekey_pub.data());
+    crypto_scalarmult(dh4.data(), client_keys.one_time_priv.data(), server_signed_prekey_pub.data());
 
     unsigned char concat[crypto_scalarmult_BYTES * 4];
     memcpy(concat, dh1.data(), 32);
@@ -123,20 +139,20 @@ void X3DH::derive_shared_secret_alice(
     crypto_generichash(shared_secret.data(), shared_secret.size(), concat, sizeof(concat), nullptr, 0);
 }
 
-void X3DH::derive_shared_secret_bob(
-    const X3DHKeys &bob_keys,
-    const std::array<unsigned char, crypto_kx_PUBLICKEYBYTES> &alice_identity_pub,
-    const std::array<unsigned char, crypto_kx_PUBLICKEYBYTES> &alice_signed_prekey_pub,
-    const std::array<unsigned char, crypto_kx_PUBLICKEYBYTES> &alice_one_time_pub,
+void X3DH::derive_shared_secret_server(
+    const X3DHKeys &server_keys,
+    const std::array<unsigned char, crypto_kx_PUBLICKEYBYTES> &client_identity_pub,
+    const std::array<unsigned char, crypto_kx_PUBLICKEYBYTES> &client_signed_prekey_pub,
+    const std::array<unsigned char, crypto_kx_PUBLICKEYBYTES> &client_one_time_pub,
     std::array<unsigned char, crypto_generichash_BYTES> &shared_secret
 ) {
     std::array<unsigned char, crypto_scalarmult_BYTES> dh1, dh2, dh3, dh4;
 
-    // Bob's perspective: DH calculations (mirror of Alice's)
-    crypto_scalarmult(dh1.data(), bob_keys.signed_prekey_priv.data(), alice_identity_pub.data());
-    crypto_scalarmult(dh2.data(), bob_keys.identity_priv.data(), alice_signed_prekey_pub.data());
-    crypto_scalarmult(dh3.data(), bob_keys.signed_prekey_priv.data(), alice_signed_prekey_pub.data());
-    crypto_scalarmult(dh4.data(), bob_keys.signed_prekey_priv.data(), alice_one_time_pub.data());
+    // Server's perspective: DH calculations (mirror of Client's)
+    crypto_scalarmult(dh1.data(), server_keys.signed_prekey_priv.data(), client_identity_pub.data());
+    crypto_scalarmult(dh2.data(), server_keys.identity_priv.data(), client_signed_prekey_pub.data());
+    crypto_scalarmult(dh3.data(), server_keys.signed_prekey_priv.data(), client_signed_prekey_pub.data());
+    crypto_scalarmult(dh4.data(), server_keys.signed_prekey_priv.data(), client_one_time_pub.data());
 
     unsigned char concat[crypto_scalarmult_BYTES * 4];
     memcpy(concat, dh1.data(), 32);
@@ -145,4 +161,31 @@ void X3DH::derive_shared_secret_bob(
     memcpy(concat + 96, dh4.data(), 32);
 
     crypto_generichash(shared_secret.data(), shared_secret.size(), concat, sizeof(concat), nullptr, 0);
+}
+
+
+
+// Helper functions for signing and verifying
+SignedMessage sign_message(const std::string& message, const X3DHKeys& sender_keys) {
+    SignedMessage signed_msg;
+    signed_msg.message = message;
+    signed_msg.sender_public_key = sender_keys.sign_pub;
+
+    
+    
+    crypto_sign_detached(signed_msg.signature.data(),
+                        nullptr,
+                        reinterpret_cast<const unsigned char*>(message.data()),
+                        message.size(),
+                        sender_keys.sign_priv.data());
+
+    return signed_msg;
+}
+
+
+bool verify_message(const SignedMessage& signed_msg) {
+    return crypto_sign_verify_detached(signed_msg.signature.data(),
+                                      reinterpret_cast<const unsigned char*>(signed_msg.message.data()),
+                                      signed_msg.message.size(),
+                                      signed_msg.sender_public_key.data()) == 0;
 }

@@ -44,18 +44,16 @@ class CryptoPack
 
         void set_shared_secret(const X3DHKeys& remote_keys) {
             if (is_server) {
-                // Server is always "Bob" in X3DH
-                X3DH::derive_shared_secret_bob(
-                    local_keys,           // Bob's keys (server)
+                X3DH::derive_shared_secret_server(
+                    local_keys,           // Server's keys
                     remote_keys.identity_pub,
                     remote_keys.signed_prekey_pub,
                     remote_keys.one_time_pub,
                     shared_secret
                 );
             } else {
-                // Client is always "Alice" in X3DH
-                X3DH::derive_shared_secret_alice(
-                    local_keys,           // Alice's keys (client)
+                X3DH::derive_shared_secret_client(
+                    local_keys,           // Client's keys 
                     remote_keys.identity_pub,
                     remote_keys.signed_prekey_pub,
                     remote_keys.one_time_pub,
@@ -63,7 +61,7 @@ class CryptoPack
                 );
             }
 
-            std::cout << "shared_secret: " << to_hex_array(shared_secret) << "\n";
+            //std::cout << "shared_secret: " << to_hex_array(shared_secret) << "\n";
             if (is_server) {
                 receive_ratchet.initialize_as_responder(shared_secret);
                 send_ratchet.initialize_as_initiator(shared_secret);
@@ -96,7 +94,7 @@ class ManagePack
 {
     private:
         map<string, map<int,string>> network_packs;
-        int maxPack = 32768 - 100; // 32KB - 100 bytes for encryption overhead
+        int maxPack = 32768 - 200; // 32KB - 200 bytes for encryption overhead
 
         map< string, CryptoPack> crypto_packs;
 
