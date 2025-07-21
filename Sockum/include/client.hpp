@@ -48,7 +48,7 @@ class SockumClient : public SockumNetworkEntity
         CryptoPack* crypto_pack = nullptr;
 
     public:
-        SockumClient(std::string server_ip = "", int PORT = 8080);
+        SockumClient(std::string server_ip = "", int PORT = 8080, bool baseLogActivated = true);
         ~SockumClient();
 
         string getClientID(){ return client_id; }

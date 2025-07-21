@@ -6,10 +6,11 @@
 #include <arpa/inet.h> 
 #include <regex>
 
-SockumClient::SockumClient(std::string server_ip, int PORT)
+SockumClient::SockumClient(std::string server_ip, int PORT, bool SockumClient(std::string server_ip = "", int PORT = 8080, bool baseLogActivated = true); )
 {
     if(PORT < 1) throw runtime_error("PORT must be greater than zero.");
     server_port = PORT;
+    setBaseLogActivated(baseLogActivated);
     initClient(server_ip);
 }
 
@@ -60,10 +61,10 @@ void SockumClient::connectClient()
             crypto_pack->set_shared_secret(*x3dh_keys);
 
             mangePack->add_cid("local");
-            printc(GREEN,"Client connect to port %d.\n",server_port);
+            if (baseLogActivated) printc(GREEN,"Client connect to port %d.\n",server_port);
             break;
         };
-        printc(RED,"(%d) : Client failed to connect to port %d\n",count_try_connection,server_port);
+        if (baseLogActivated) printc(RED,"(%d) : Client failed to connect to port %d\n",count_try_connection,server_port);
         count_try_connection ++;
         this_thread::sleep_for(chrono::seconds(5));
 
@@ -93,7 +94,7 @@ void SockumClient::listenerRoutes()
         SignedMessage signed_message_received = SignedMessage::deserialize(decrypted);
 
         if(!verify_message(signed_message_received)) {
-            printc(RED, "Received message signature verification failed.\n");
+            if (baseLogActivated) printc(RED, "Received message signature verification failed.\n");
             pack.clear();
             continue;
         }

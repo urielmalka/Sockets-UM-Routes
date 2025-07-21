@@ -50,7 +50,7 @@ class SockumServer : public SockumNetworkEntity
         string getClientBySocketID(int sid);
 
     public:
-        SockumServer();
+        SockumServer(bool baseLogActivated = true);
         SockumServer(int PORT);
         SockumServer(int PORT, int max_conn);
         ~SockumServer();

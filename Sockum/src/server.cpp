@@ -1,11 +1,15 @@
 #include "server.hpp"
 
-SockumServer::SockumServer()
+SockumServer::SockumServer(bool baseLogActivated)
 {
     server_port = 8080;
     max_connection = 128;
+
+    setBaseLogActivated(baseLogActivated);
+    
     initServer();
     coreRoutes();
+    
 }
 
 SockumServer::SockumServer(int PORT)
@@ -143,7 +147,7 @@ void SockumServer::listenerRoutes(int client_id)
         SignedMessage signed_message_received = SignedMessage::deserialize(decrypted);
 
         if(!verify_message(signed_message_received)) {
-            printc(RED, "Received message signature verification failed.\n");
+            if (baseLogActivated) printc(RED, "Received message signature verification failed.\n");
             pack.clear();
             continue;
         }
