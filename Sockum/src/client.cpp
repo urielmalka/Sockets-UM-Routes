@@ -6,7 +6,7 @@
 #include <arpa/inet.h> 
 #include <regex>
 
-SockumClient::SockumClient(std::string server_ip, int PORT, bool SockumClient(std::string server_ip = "", int PORT = 8080, bool baseLogActivated = true); )
+SockumClient::SockumClient(std::string server_ip, int PORT, bool baseLogActivated )
 {
     if(PORT < 1) throw runtime_error("PORT must be greater than zero.");
     server_port = PORT;
