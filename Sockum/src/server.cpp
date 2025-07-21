@@ -62,8 +62,8 @@ void SockumServer::initServer()
 
 void SockumServer::run()
 {
-    cout << "Server is running on PORT: " << server_port << endl;
-    
+    if (baseLogActivated) cout << "Server is running on PORT: " << server_port << endl;
+
     int new_socket;
 
     while (1){
@@ -126,7 +126,7 @@ void SockumServer::listenerRoutes(int client_id)
     map<string, any> pack;
     int message_id;
 
-    printcb(GREEN, "Client %d is connect now.\n", client_id);
+    baseLogActivated ? printcb(GREEN, "Client %d is connect now.\n", client_id) : void();
 
     while (1)
     {
@@ -166,13 +166,13 @@ void SockumServer::listenerRoutes(int client_id)
 
             int index = serialize_route(c, &route);
             if(index == ERROR_ROUTE){
-                printcu(RED,"Error route socket: %s\n",s.substr(0,50).c_str());
+                if (baseLogActivated) printcu(RED,"Error route socket: %s\n",s.substr(0,50).c_str());
                 continue;
             };
 
             memmove(c, c + index, s.size() + 1);
             if(serialize_str(c, &pack) == ERROR_SERIALIZE_PACK){
-                printcu(RED,"Error pack socket: %s\n",s.substr(0,50).c_str());
+                if (baseLogActivated) printcu(RED,"Error pack socket: %s\n",s.substr(0,50).c_str());
                 continue;
             };
 
@@ -182,7 +182,7 @@ void SockumServer::listenerRoutes(int client_id)
                 auto func = routes.at(route);
                 func(pack);
             }catch(const out_of_range &e){
-                printc(RED,"Error: %s not found\n",route.substr(0,50).c_str());
+                if (baseLogActivated) printc(RED,"Error: %s not found\n",route.substr(0,50).c_str());
             }
 
             delete[] c;
@@ -194,7 +194,7 @@ void SockumServer::listenerRoutes(int client_id)
 
     }
     string cid = getClientBySocketID(client_id);
-    printcb(RED, "Client %s is disconnect now.\n", cid.c_str());
+    baseLogActivated ? printcb(RED, "Client %s is disconnect now.\n", cid.c_str()) : void();
     clients.erase(cid);
     mangePack->remove_cid(cid);
     close(client_id);
@@ -203,10 +203,12 @@ void SockumServer::listenerRoutes(int client_id)
 
 SockumServer* SockumServer::addRoute(string route, function<void(map<string, any>&)> funcRoute)
 {
-    if (routes.find(route) != routes.end()) {
-        printci(RED, "Warning: Route already exists. Replacing route: %s\n", route.c_str());
-    } else {
-        printci(BLUE, "Route Added: %s\n", route.c_str());
+    if (baseLogActivated) {
+        if (routes.find(route) != routes.end()) {
+            printci(RED, "Warning: Route already exists. Replacing route: %s\n", route.c_str());
+        } else {
+            printci(BLUE, "Route Added: %s\n", route.c_str());
+        }
     }
 
     routes[route] = funcRoute;
@@ -217,10 +219,12 @@ SockumServer* SockumServer::addRoute(string route, function<void(map<string, any
 template <typename T>
 SockumServer* SockumServer::addRoute(string route, function<void(T, map<string, any>& )> funcRoute)
 {
-    if (serverRoutes.find(route) != serverRoutes.end()) {
-        printci(RED, "Warning: Route already exists. Replacing route: %s\n", route.c_str());
-    } else {
-        printci(BLUE, "Route Added: %s\n", route.c_str());
+    if (baseLogActivated) {
+        if (routes.find(route) != routes.end()) {
+            printci(RED, "Warning: Route already exists. Replacing route: %s\n", route.c_str());
+        } else {
+            printci(BLUE, "Route Added: %s\n", route.c_str());
+        }
     }
     serverRoutes[route] = funcRoute;
     return this;
@@ -299,7 +303,7 @@ SockumServer* SockumServer::sendMessageToAll(string route ,map<string, any> &arg
     try {
         args.at("cid");
     } catch (const std::out_of_range& e) {
-        printcb(RED,"Missing 'cid' in args: %s\n",e.what());
+        if (baseLogActivated) printcb(RED,"Missing 'cid' in args: %s\n",e.what());
         return this;
     }
 
@@ -321,8 +325,9 @@ SockumServer* SockumServer::sendMessageToAll(string route ,map<string, any> &arg
             uint32_t len = htonl(buffer_encrypted.size());
             send(client.second, &len, sizeof(len), 0);
             ssize_t bytes_sent = send(client.second, buffer_encrypted.c_str(), buffer_encrypted.size(), MSG_NOSIGNAL);
-            if(bytes_sent < 0)
-                printc(RED, "Send Faild\n");
+            if(bytes_sent < 0){
+                if (baseLogActivated) printc(RED, "Send Failed\n");
+            }
         }
     }
 
@@ -342,7 +347,7 @@ void SockumServer::coreRoutes()
     addRoute("join", [this](map<string, any> args) {
         
         if(!args.count("room_id")){
-            printcb(RED, "Missing 'room_id' in args.\n");
+            if (baseLogActivated) printcb(RED, "Missing 'room_id' in args.\n");
             return;
         }
         
@@ -352,14 +357,14 @@ void SockumServer::coreRoutes()
         int client_socket = clients[cid];
         
         if(rooms.find(stoi(room_id)) == rooms.end()){
-            printcb(RED, "Room with ID %s not found.\n", room_id.c_str());
+            if (baseLogActivated) printcb(RED, "Room with ID %s not found.\n", room_id.c_str());
             return;
         }
 
      } );
     addRoute("leave", [this](map<string, any> args) {
         if(!args.count("room_id")){
-            printcb(RED, "Missing 'room_id' in args.\n");
+            if (baseLogActivated) printcb(RED, "Missing 'room_id' in args.\n");
             return;
         }
 
@@ -367,12 +372,12 @@ void SockumServer::coreRoutes()
         std::string cid = any_cast<string>(args["cid"]);
         
         if(rooms.find(stoi(room_id)) == rooms.end()){
-            printcb(RED, "Room with ID %s not found.\n", room_id.c_str());
+            if (baseLogActivated) printcb(RED, "Room with ID %s not found.\n", room_id.c_str());
             return;
         }
 
         if(!rooms[stoi(room_id)].clientLeave(cid)){
-            printcb(RED, "Client %s not found in room %s.\n", cid.c_str(), room_id.c_str());
+            if (baseLogActivated) printcb(RED, "Client %s not found in room %s.\n", cid.c_str(), room_id.c_str());
             return;
         }
     } );
@@ -380,7 +385,7 @@ void SockumServer::coreRoutes()
     addRoute("createRoom", [this](map<string, any> args) {
         
         if(!args.count("room_name")){
-            printcb(RED, "Missing 'room_name' in args.\n");
+            if (baseLogActivated) printcb(RED, "Missing 'room_name' in args.\n");
             return;
         }
         std::string room_name = any_cast<string>(args["room_name"]);
@@ -390,7 +395,7 @@ void SockumServer::coreRoutes()
         int room_id;
         if(unique_id > -1){
             if(!addRoom(unique_id,room_name)){
-                printcb(RED, "Error creating new room with unique_id %d.\n", unique_id);
+                if (baseLogActivated) printcb(RED, "Error creating new room with unique_id %d.\n", unique_id);
                 map<string, any> error_response; 
                 error_response["error"] = "Error creating new room with unique_id " + to_string(unique_id);
                 error_response["cid"] = cid;

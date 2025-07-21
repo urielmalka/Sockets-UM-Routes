@@ -56,6 +56,7 @@ class SockumNetworkEntity{
         int server_port;
 
         bool logActivated = false;
+        bool baseLogActivated = true;
 
         map<int,Room> rooms;
 
@@ -82,6 +83,10 @@ class SockumNetworkEntity{
 
         void setLogActivated(bool activated) {
             logActivated = activated;
+        }
+
+        void setBaseLogActivated(bool activated) {
+            baseLogActivated = activated;
         }
         
         

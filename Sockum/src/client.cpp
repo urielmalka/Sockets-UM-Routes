@@ -145,10 +145,12 @@ void SockumClient::listenerRoutes()
 
 SockumClient* SockumClient::addRoute(string route, function<void(map<string, any>)> funcRoute)
 {
-    if (routes.find(route) != routes.end()) {
-        printci(RED, "Warning: Route already exists. Replacing route: %s\n", route.c_str());
-    } else {
-        printci(BLUE, "Route Added: %s\n", route.c_str());
+    if (baseLogActivated) {
+        if (routes.find(route) != routes.end()) {
+            printci(RED, "Warning: Route already exists. Replacing route: %s\n", route.c_str());
+        } else {
+            printci(BLUE, "Route Added: %s\n", route.c_str());
+        }
     }
     routes[route] = funcRoute;
     return this;
@@ -156,7 +158,7 @@ SockumClient* SockumClient::addRoute(string route, function<void(map<string, any
 
 SockumClient* SockumClient::addFileRoute(string route, const string path, function<void(map<string, any>)> funcRoute)
 {
-    printci(BLUE,"File Route Added: %s\n",route.c_str());
+    if (baseLogActivated) printci(BLUE,"File Route Added: %s\n",route.c_str());
     routes[route] = [this, path, funcRoute](map<string, any> args) {
             routeFileProcess(args, path); 
             if (funcRoute) {
@@ -169,10 +171,12 @@ SockumClient* SockumClient::addFileRoute(string route, const string path, functi
 template <typename T>
 SockumClient* SockumClient::addRoute(string route, function<void(T, map<string, any>)> funcRoute)
 {
-    if (routes.find(route) != routes.end()) {
-        printci(RED, "Warning: Route already exists. Replacing route: %s\n", route.c_str());
-    } else {
-        printci(BLUE, "Route Added: %s\n", route.c_str());
+    if (baseLogActivated) {
+        if (routes.find(route) != routes.end()) {
+            printci(RED, "Warning: Route already exists. Replacing route: %s\n", route.c_str());
+        } else {
+            printci(BLUE, "Route Added: %s\n", route.c_str());
+        }
     }
     routes[route] = funcRoute;
     return this;
@@ -294,7 +298,7 @@ void SockumClient::run(){
 void SockumClient::setClientId(map<string, any>& args)
 {
     client_id = any_cast<string>(args["cid"]);
-    printcb(GREEN, "Client %s is connect now.\n",client_id.c_str());
+    if (baseLogActivated) printcb(GREEN, "Client %s is connect now.\n",client_id.c_str());
 }
 
 void SockumClient::coreRoutes()
@@ -308,7 +312,7 @@ void SockumClient::coreRoutes()
     addRoute("createRoom", [this](map<string, any> args) {
         
         if(args.count("error")){
-            printcb(RED, "Error creating room: %s\n", any_cast<string>(args["error"]).c_str());
+            if (baseLogActivated) printcb(RED, "Error creating room: %s\n", any_cast<string>(args["error"]).c_str());
             return;
         }
 
@@ -337,7 +341,7 @@ bool SockumClient::join(int room_id, std::string room_name)
     route("join", args);
 
     if(addRoom(room_id, room_name) && room_name.length() > 0){
-        printcb(GREEN, "Join to %s\n",room_name.c_str());
+        if (baseLogActivated)printcb(GREEN, "Join to %s\n",room_name.c_str());
     }
     return true;
 }
@@ -349,7 +353,7 @@ bool SockumClient::leave(int room_id, std::string room_name)
     route("leave", args);
 
     if(removeRoom(room_id) && room_name.length() > 0){
-        printcb(YELLOW, "Leave from %s\n",room_name.c_str());
+        if (baseLogActivated)printcb(YELLOW, "Leave from %s\n",room_name.c_str());
     }
     return true;
 }
