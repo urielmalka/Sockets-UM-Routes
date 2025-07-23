@@ -28,6 +28,13 @@ Example:
 #include <map>
 #include <any>
 #include <vector>
+#include <unordered_map>
+#include <functional>
+#include <typeindex>
+#include <typeinfo>
+
+using namespace std;
+
 
 using namespace std;
 
@@ -45,5 +52,11 @@ string serialize_map(const map<string, any>& args);
 int serialize_route(const string s, string* rout);
 int serialize_str(const string& s, map<string, any>* args);
 vector<string> splitByDelimiter(const string& str, const string& delimiter);
+
+template <typename T>
+vector<T> unpack_vector(const any& a);
+
+template <typename T>
+map<string, T> unpack_map(const any& a);
 
 #endif // SERIALIZE_HPP
