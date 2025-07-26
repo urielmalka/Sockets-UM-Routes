@@ -32,7 +32,7 @@ class SockumClient : public SockumNetworkEntity
 
         sockaddr_in serverAddress;
 
-        map<string, function<void(map<string, any>)>> routes;
+        map<string, function<void(map<string, any> &)>> routes;
 
         void initClient(std::string server_ip);
         void connectClient();
@@ -55,11 +55,11 @@ class SockumClient : public SockumNetworkEntity
 
         void run();
 
-        SockumClient* addRoute(string route, function<void(map<string, any>)> funcRoute);
-        SockumClient* addFileRoute(string route,const string path = "", function<void(map<string, any>)> funcRoute = nullptr);
+        SockumClient* addRoute(string route, function<void(map<string, any> &)> funcRoute);
+        SockumClient* addFileRoute(string route,const string path = "", function<void(map<string, any> &)> funcRoute = nullptr);
 
         template <typename T>
-        SockumClient* addRoute(string route, function<void(T, map<string, any>)> funcRoute);
+        SockumClient* addRoute(string route, function<void(T, map<string, any> &)> funcRoute);
 
         SockumClient* route(string route, map<string, any>& args);
         SockumClient* routeFile(string route, string path);

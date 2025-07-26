@@ -144,7 +144,7 @@ void SockumClient::listenerRoutes()
     
 }
 
-SockumClient* SockumClient::addRoute(string route, function<void(map<string, any>)> funcRoute)
+SockumClient* SockumClient::addRoute(string route, function<void(map<string, any> &)> funcRoute)
 {
     if (baseLogActivated) {
         if (routes.find(route) != routes.end()) {
@@ -157,11 +157,11 @@ SockumClient* SockumClient::addRoute(string route, function<void(map<string, any
     return this;
 }
 
-SockumClient* SockumClient::addFileRoute(string route, const string path, function<void(map<string, any>)> funcRoute)
+SockumClient* SockumClient::addFileRoute(string route, const string path, function<void(map<string, any> &)> funcRoute)
 {
     if (baseLogActivated) printci(BLUE,"File Route Added: %s\n",route.c_str());
-    routes[route] = [this, path, funcRoute](map<string, any> args) {
-            routeFileProcess(args, path); 
+    routes[route] = [this, path, funcRoute](map<string, any> &args) {
+            routeFileProcess(args, path);
             if (funcRoute) {
                 funcRoute(args);
             }
@@ -170,7 +170,7 @@ SockumClient* SockumClient::addFileRoute(string route, const string path, functi
 }
 
 template <typename T>
-SockumClient* SockumClient::addRoute(string route, function<void(T, map<string, any>)> funcRoute)
+SockumClient* SockumClient::addRoute(string route, function<void(T, map<string, any> &)> funcRoute)
 {
     if (baseLogActivated) {
         if (routes.find(route) != routes.end()) {
