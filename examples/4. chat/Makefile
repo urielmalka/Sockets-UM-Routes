@@ -5,7 +5,7 @@ LDFLAGS = -L ../../Sockum/build -lSockum -lsodium
 
 # === Source Files ===
 OBJ_SERVER = server.cpp
-OBJ_CLIENT1 = client.cpp
+OBJ_CLIENT = client.cpp
 
 # === Output Binaries ===
 BIN_SERVER = server
