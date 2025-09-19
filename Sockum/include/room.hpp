@@ -1,3 +1,11 @@
+/**
+ * @author Uriel Malka - urielmalka1@gmail.com
+ * @brief Represents a room that holds multiple clients, 
+ *        providing functionality to manage client connections 
+ *        (join/leave), assign room IDs/names, and print room state.
+ * 
+ */
+
 #ifndef ROOM_HPP
 #define ROOM_HPP
 
