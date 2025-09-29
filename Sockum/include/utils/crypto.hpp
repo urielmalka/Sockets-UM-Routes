@@ -1,3 +1,11 @@
+/**
+ * @file crypto.hpp
+ * @brief Cryptographic utilities and protocols for Sockum.
+ *
+ * Provides hex helpers, key derivation, message signing/verification,
+ * Double Ratchet for symmetric messaging, and X3DH key agreement,
+ * implemented on top of libsodium.
+ */
 #ifndef CRYPTO_HPP 
 #define CRYPTO_HPP
 
