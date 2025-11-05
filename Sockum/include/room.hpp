@@ -13,13 +13,13 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <map>
+#include <unordered_map>
 
 class Room
 {
     private:    
         int roomId;
-        std::map<std::string, int> clients;
+        std::unordered_map<std::string, int> clients;
 
         std::string room_name;
 
@@ -32,7 +32,7 @@ class Room
         bool clientLeave(std::string client_id);
 
         std::string getRoomName() const { return room_name; }
-        std::map<std::string, int> getClients() const { return clients; }
+        std::unordered_map<std::string, int> getClients() const { return clients; }
         int getRoomId() const { return roomId; }
         
         

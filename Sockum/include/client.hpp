@@ -22,6 +22,7 @@
 #include "networkEntity.hpp"
 #include "utils/serialize.hpp"
 #include "utils/crypto.hpp"
+#include <unordered_map>
 
 using namespace std;
 
@@ -32,7 +33,7 @@ class SockumClient : public SockumNetworkEntity
 
         sockaddr_in serverAddress;
 
-        map<string, function<void(map<string, any> &)>> routes;
+        unordered_map<string, function<void(map<string, any> &)>> routes;
 
         void initClient(std::string server_ip);
         void connectClient();

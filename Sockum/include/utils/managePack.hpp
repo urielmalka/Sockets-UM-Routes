@@ -20,6 +20,7 @@
 #include <string>
 #include <iostream>
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include "utils/crypto.hpp"
 #include "../external/UColor_C/include/color.h"
@@ -93,10 +94,10 @@ class CryptoPack
 class ManagePack
 {
     private:
-        map<string, map<int,string>> network_packs;
+        unordered_map<string, map<int,string>> network_packs;
         int maxPack = 32768 - 200; // 32KB - 200 bytes for encryption overhead
 
-        map< string, CryptoPack> crypto_packs;
+        unordered_map< string, CryptoPack> crypto_packs;
 
 
     public:

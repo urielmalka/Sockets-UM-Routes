@@ -20,6 +20,7 @@
 
 #include "networkEntity.hpp"
 #include "utils/serialize.hpp"
+#include <unordered_map>
 
 using namespace std; 
 
@@ -35,9 +36,10 @@ class SockumServer : public SockumNetworkEntity
 
         int max_connection;
 
-        map<string, function<void(map<string, any>&)> > routes;
-        map<string, function<void(SockumServer, map<string, any>&)> > serverRoutes;
-        map<string, int> clients;
+        unordered_map<string, function<void(map<string, any>&)> > routes;
+        unordered_map<string, function<void(SockumServer, map<string, any>&)> > serverRoutes;
+        unordered_map<string, int> clients;
+        unordered_map<int, string> socket_to_client_id;  // Reverse lookup: socket -> client_id
 
         vector<thread> tasks;
 

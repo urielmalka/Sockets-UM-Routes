@@ -25,6 +25,7 @@
 #include <thread>
 #include <chrono>
 #include <map>
+#include <unordered_map>
 #include <any>
 #include <string.h>
 #include <functional>
@@ -58,7 +59,7 @@ class SockumNetworkEntity{
         bool logActivated = false;
         bool baseLogActivated = true;
 
-        map<int,Room> rooms;
+        unordered_map<int,Room> rooms;
 
         bool recv_all(int socket, char* buffer, size_t& size);
 

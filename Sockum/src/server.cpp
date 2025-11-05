@@ -106,6 +106,7 @@ void SockumServer::run()
         delete x3dh_keys; // Clean up after receiving keys
 
         clients[tempId] = new_socket;
+        socket_to_client_id[new_socket] = tempId;  // Maintain reverse lookup
 
         mangePack->add_cid(tempId);
 
@@ -200,6 +201,7 @@ void SockumServer::listenerRoutes(int client_id)
     string cid = getClientBySocketID(client_id);
     baseLogActivated ? printcb(RED, "Client %s is disconnect now.\n", cid.c_str()) : void();
     clients.erase(cid);
+    socket_to_client_id.erase(client_id);  // Clean up reverse lookup
     mangePack->remove_cid(cid);
     close(client_id);
     
@@ -339,8 +341,14 @@ SockumServer* SockumServer::sendMessageToAll(string route ,map<string, any> &arg
 };
 SockumServer* SockumServer::closeClientConnection(string cid) 
 {
-    int client_id = clients[cid];
-    close(client_id);
+    auto it = clients.find(cid);
+    if (it != clients.end()) {
+        int client_id = it->second;
+        socket_to_client_id.erase(client_id);  // Clean up reverse lookup
+        clients.erase(it);
+        mangePack->remove_cid(cid);
+        close(client_id);
+    }
 
     return this;
 };
@@ -427,11 +435,10 @@ void SockumServer::coreRoutes()
 
 string SockumServer::getClientBySocketID(int sid)
 {
-    for (auto it = clients.begin(); it != clients.end(); ++it)
-    {
-        if(it->second == sid) return it->first;
+    auto it = socket_to_client_id.find(sid);
+    if (it != socket_to_client_id.end()) {
+        return it->second;
     }
-
     return CLIENT_NOT_FOUND;
 }
 
